@@ -26,9 +26,9 @@ h1{font-size:18px;margin:4px 0 10px;font-weight:650}
 .score{font-size:15px;color:var(--mt)}.score b{font-size:34px;line-height:1}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips span{background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:3px 8px;font-size:12.5px}
 .meter{margin:10px 0 12px}.lb{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mt)}.lb b{color:var(--tx);font-weight:500}
-.bar{position:relative;height:12px;border-radius:6px;margin:5px 0}
-.bar i{position:absolute;top:-4px;width:4px;height:20px;background:#fff;border-radius:2px;box-shadow:0 0 0 2px #000a;transform:translateX(-2px)}
-.zn{position:absolute;top:-2px;bottom:-2px;border:2px solid #3ecf8ecc;border-radius:7px}
+.bar{position:relative;height:18px;border-radius:9px;margin:9px 0;touch-action:none;cursor:pointer}
+.bar i{position:absolute;top:-6px;width:6px;height:30px;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #000a;transform:translateX(-3px);pointer-events:none}
+.zn{position:absolute;top:-2px;bottom:-2px;border:2px solid #3ecf8ecc;border-radius:11px;pointer-events:none}
 .fd{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--ln)}.fd:first-child{border:0}
 .dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px}
 .fd b{display:block}.fd small{display:block;color:var(--mt);font-size:13.5px}.fd em{display:block;font-style:normal;color:#b9d3ff;font-size:13.5px;margin-top:3px}
@@ -53,20 +53,21 @@ input[type=color]{flex:none;width:46px;height:38px;border:1px solid var(--ln);bo
 <div class="row"><button id="hold">👁 Giữ để xem ảnh gốc</button><button id="save">💾 Lưu ảnh</button></div>
 <div class="note" id="busy" hidden></div>
 
-<div class="tabs"><button class="on" data-t="an">Phân tích</button><button data-t="pr">Mẫu màu</button><button data-t="ed">Chỉnh tay</button><button data-t="ht">Nhiệt</button><button data-t="cr">Khung</button><button data-t="sp">Nét</button><button data-t="ly">Tách lớp</button></div>
-
-<section class="pn" id="an"><div class="card note">Chưa có ảnh. Hãy chụp hoặc tải ảnh để xem phân tích chi tiết.</div></section>
+<div class="tabs"><button class="on" data-t="ed">Chỉnh &amp; phân tích</button><button data-t="pr">Mẫu màu</button><button data-t="ht">Nhiệt</button><button data-t="cr">Khung</button><button data-t="sp">Nét</button><button data-t="ly">Tách lớp</button></div>
 
 <section class="pn" id="pr" hidden>
 <div class="card"><div class="sl"><div class="h"><span>Cường độ mẫu</span><b id="strv">100%</b></div><input type="range" id="str" min="0" max="100" value="100"></div>
 <label class="ck"><input type="checkbox" id="pre_auto"> Tự cân bằng sáng/màu trước khi áp mẫu</label></div>
 <div class="pg" id="pg"></div></section>
 
-<section class="pn" id="ed" hidden>
+<section class="pn" id="ed">
+<div class="card"><div class="score"><b id="scv">–</b>/100 điểm cân bằng ảnh</div>
+<div class="note" id="scn" style="margin:2px 0 0">Chụp hoặc tải ảnh lên để phân tích trực tiếp. Khung xanh là vùng lý tưởng, kéo vạch trắng trên từng thanh để chỉnh.</div>
+<div id="mt"></div><div class="chips" id="chp"></div>
+<div class="row" style="margin:6px 0 0"><button id="rs">↺ Mặc định</button><button id="au" class="pri">✨ Tự động</button></div></div>
+<div class="card" id="fnd" hidden></div>
 <div class="card"><canvas id="hist" width="256" height="84"></canvas><div class="note">Biểu đồ phân bố sáng/màu (đỏ, lục, lam). Dồn sát mép trái là tối, sát mép phải là cháy sáng.</div></div>
-<div class="card" id="sl"></div>
-<div class="row"><button id="rs">↺ Về mặc định</button><button id="au" class="pri">✨ Tự động</button></div></section>
-
+<div class="card" id="sl"></div></section>
 <section class="pn" id="ht" hidden>
 <div class="card"><div class="modes" id="modes"><button data-m="off" class="on">Tắt</button><button data-m="lum">Độ sáng</button><button data-m="warm">Ấm/Lạnh</button><button data-m="sat">Bão hòa</button></div>
 <div class="sl"><div class="h"><span>Độ đậm lớp nhiệt</span></div><input type="range" id="hop" min="20" max="100" value="70"></div>
@@ -113,17 +114,17 @@ function process(sd,w,h,p){
  return out}
 
 /* ---------- phân tích ---------- */
-function analyze(img){
- const k=Math.min(1,240/Math.max(img.width,img.height)),w=Math.max(8,Math.round(img.width*k)),h=Math.max(8,Math.round(img.height*k));
- const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
- const d=x.getImageData(0,0,w,h).data,n=w*h,hist=new Uint32Array(256),L=new Float32Array(n);
- let sr=0,sg=0,sb=0,sl=0,ss=0,hi=0,lo=0;
- for(let i=0,q=0;i<n;i++,q+=4){const r=d[q],g=d[q+1],b=d[q+2],l=.2126*r+.7152*g+.0722*b;L[i]=l;hist[l|0]++;sr+=r;sg+=g;sb+=b;sl+=l;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);ss+=mx?(mx-mn)/mx:0;if(l>=248)hi++;if(l<=7)lo++}
+function statsData(d,w,h){
+ const n=w*h,L=new Float32Array(n);let sr=0,sg=0,sb=0,sl=0,ss=0,hi=0,lo=0;
+ for(let i=0,q=0;i<n;i++,q+=4){const r=d[q],g=d[q+1],b=d[q+2],l=.2126*r+.7152*g+.0722*b;L[i]=l;sr+=r;sg+=g;sb+=b;sl+=l;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);ss+=mx?(mx-mn)/mx:0;if(l>=248)hi++;if(l<=7)lo++}
  const mean=sl/n;let v=0;for(let i=0;i<n;i++)v+=(L[i]-mean)**2;
  let ls=0,lq=0,lc=0;for(let j=1;j<h-1;j++)for(let i=1;i<w-1;i++){const p=j*w+i,e=4*L[p]-L[p-1]-L[p+1]-L[p-w]-L[p+w];ls+=e;lq+=e*e;lc++}
  const aR=sr/n,aG=sg/n,aB=sb/n,m=(aR+aG+aB)/3||1;
- return{mean,std:Math.sqrt(v/n),hi:hi/n*100,lo:lo/n*100,temp:(aR-aB)/m*100,tint:(aG-(aR+aB)/2)/m*100,sat:ss/n,sharp:lq/lc-(ls/lc)**2}}
-
+ return{mean,std:Math.sqrt(v/n),hi:hi/n*100,lo:lo/n*100,temp:(aR-aB)/m*100,tint:(aG-(aR+aB)/2)/m*100,sat:ss/n,sharp:lc?lq/lc-(ls/lc)**2:100}}
+function analyze(img){
+ const k=Math.min(1,240/Math.max(img.width,img.height)),w=Math.max(8,Math.round(img.width*k)),h=Math.max(8,Math.round(img.height*k));
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
+ return statsData(x.getImageData(0,0,w,h).data,w,h)}
 function diagnose(a){
  const o=[],f=(lv,t,d,x)=>o.push({lv,t,d,x}),m=Math.round(a.mean);
  if(m<55)f('bd','🌑 Quá tối',`Độ sáng trung bình ${m}/255 (chuẩn khoảng 100–150), phần lớn ảnh nằm trong vùng đen.`,'Tăng "Độ sáng" +30…+50 và "Vùng tối" +30. Ảnh thiếu sáng dễ nhiễu hạt nên đừng nâng quá tay.');
@@ -171,25 +172,6 @@ function computeAuto(a){
  p.saturation=a.sat<.22?R(cl((.22-a.sat)*200,0,35)):a.sat>.5?-R(cl((a.sat-.5)*150,0,30)):0;
  return p}
 
-/* ---------- giao diện phân tích ---------- */
-function meter(lb,l,r,val,pos,bg,zl,zw){return`<div class="meter"><div class="lb"><span>${lb}</span><b>${val}</b></div><div class="bar" style="background:${bg}"><span class="zn" style="left:${zl}%;width:${zw}%"></span><i style="left:${cl(pos,0,1)*100}%"></i></div><div class="lb"><span>${l}</span><span>${r}</span></div></div>`}
-function showAnalysis(){
- const a=A,fd=diagnose(a),pen=fd.reduce((s,f)=>s+(f.lv==='bd'?18:f.lv==='wn'?8:0),0),sc=Math.max(5,100-pen);
- const col=sc>=80?'var(--ok)':sc>=55?'var(--wn)':'var(--bd)',dc={ok:'var(--ok)',wn:'var(--wn)',bd:'var(--bd)'};
- const bad=fd.filter(f=>f.lv!=='ok').length;
- $('an').innerHTML=`<div class="card"><div class="score"><b style="color:${col}">${sc}</b>/100 điểm cân bằng ảnh</div>
- <div class="note" style="margin:4px 0 0">${bad?`Phát hiện ${bad} vấn đề cần xem lại.`:'Ảnh khá cân bằng, chỉ cần tinh chỉnh theo ý thích.'}</div>
- ${meter('Độ sáng','Tối','Sáng',Math.round(a.mean)+'/255',a.mean/255,'linear-gradient(90deg,#000,#fff)',39,20)}
- ${meter('Nhiệt độ màu','Lạnh','Nóng',(a.temp>0?'+':'')+a.temp.toFixed(0),.5+a.temp/100,'linear-gradient(90deg,#3b82f6,#e5e7eb,#f97316)',38,24)}
- ${meter('Tương phản','Phẳng','Gắt',a.std.toFixed(0),a.std/110,'linear-gradient(90deg,#8a8a8a,#222)',44,18)}
- ${meter('Bão hòa','Nhạt','Đậm',(a.sat*100).toFixed(0)+'%',a.sat/.8,'linear-gradient(90deg,#888,#ff3b6b,#ffb703,#06d6a0)',27,35)}
- <div class="note">Khung xanh là vùng lý tưởng, vạch trắng là vị trí ảnh của bạn.</div>
- <div class="chips"><span>Cháy sáng ${a.hi.toFixed(1)}%</span><span>Đen cứng ${a.lo.toFixed(1)}%</span><span>Sắc thái ${a.tint>0?'+':''}${a.tint.toFixed(0)}</span></div></div>
- <div class="row" style="margin-top:0"><button class="pri" id="anAuto">✨ Áp dụng sửa tự động</button></div>
- <div class="card">${fd.map(f=>`<div class="fd"><span class="dot" style="background:${dc[f.lv]}"></span><div><b>${f.t}</b><small>${f.d}</small>${f.x?`<em>Gợi ý: ${f.x}</em>`:''}</div></div>`).join('')}</div>
- <div class="note">Phân tích dựa trên giả định "trung bình toàn ảnh là xám". Cảnh hoàng hôn, nền một màu hoặc đèn sân khấu có thể bị đánh giá là lệch màu dù đó là màu thật, hãy xem đây là gợi ý.</div>`;
- $('anAuto').onclick=applyAuto}
-
 /* ---------- điều khiển ---------- */
 $('sl').innerHTML=KEYS.map(([k,l,a,b])=>`<div class="sl"><div class="h"><span>${l}</span><b id="v_${k}">0</b></div><input type="range" id="s_${k}" min="${a}" max="${b}" value="0"></div>`).join('');
 KEYS.forEach(([k])=>$('s_'+k).oninput=e=>{P[k]=+e.target.value;$('v_'+k).textContent=P[k];actPre='';markPre();render()});
@@ -212,7 +194,7 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.que
 
 /* ---------- vẽ ---------- */
 let raf=0;
-function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(!src)return;const o=process(src,W,H,P);sharpen(o,W,H,V.sharp,V.rad*W/900);compose(ctx,W,H,o);drawHist(o);hm.style.display=heatMode==='off'?'none':'block';if(heatMode!=='off')drawHeat(o)})}
+function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(!src)return;const o=process(src,W,H,P);sharpen(o,W,H,V.sharp,V.rad*W/900);compose(ctx,W,H,o);drawHist(o);live();hm.style.display=heatMode==='off'?'none':'block';if(heatMode!=='off')drawHeat(o)})}
 const hc=$('hist'),hx=hc.getContext('2d');
 function drawHist(img){const d=img.data,R=new Uint32Array(256),G=new Uint32Array(256),B=new Uint32Array(256);
  for(let q=0;q<d.length;q+=16){R[d[q]]++;G[d[q+1]]++;B[d[q+2]]++}
@@ -244,9 +226,9 @@ function setup(img){
  full=img;resetLayers();rebuild();
  const ta=document.createElement('canvas');ta.width=120;ta.height=90;const tx=ta.getContext('2d',{willReadFrequently:true});
  let sw=img.width,sh=sw*.75;if(sh>img.height){sh=img.height;sw=sh/.75}tx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,0,0,120,90);tsrc=tx.getImageData(0,0,120,90);
- A=analyze(img);AUTO=computeAuto(A);P=Z();actPre=0;syncUI();markPre();showAnalysis();thumbs();
+ A=analyze(img);AUTO=computeAuto(A);P=Z();actPre=0;syncUI();markPre();thumbs();
  $('empty').style.display='none';$('wrap').style.display='block';render();
- document.querySelector('.tabs button[data-t="an"]').click()}
+ document.querySelector('.tabs button[data-t="ed"]').click()}
 function load(f){if(!f)return;fullFile=f;const im=new Image();im.onload=()=>{URL.revokeObjectURL(im.src);setup(im)};im.onerror=()=>alert('Không đọc được ảnh này. Hãy thử ảnh JPG hoặc PNG.');im.src=URL.createObjectURL(f)}
 $('fcam').onchange=$('ffile').onchange=e=>{load(e.target.files[0]);e.target.value=''};
 const hold=$('hold'),showO=on=>{if(!src)return;if(on){ctx.putImageData(src,0,0);hm.style.display='none'}else render()};
@@ -267,7 +249,7 @@ $('save').onclick=async()=>{if(!full)return;
 
 /* ===== khung, nét, tách lớp ===== */
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
-let fullFile=null,seg=null,mask=null,bgImg=null,sel=new Set(),segr=null;
+let lsrc=null,fullFile=null,seg=null,mask=null,bgImg=null,sel=new Set(),segr=null;
 const RATIOS=[['Gốc',0,''],['1:1',1,'Instagram'],['4:5',4/5,'Instagram dọc'],['3:4',3/4,'Chân dung'],['2:3',2/3,'Ảnh in 10×15'],['9:16',9/16,'Story, TikTok'],['16:9',16/9,'YouTube'],['4:3',4/3,'Ảnh điện thoại'],['3:2',3/2,'Máy ảnh'],['21:9',21/9,'Điện ảnh']];
 const V0={ratio:0,zoom:100,dx:0,dy:0,sharp:0,rad:2,up:1,ai:0,bgType:'none',bgColor:'#ffffff',bgColor2:'#8ec5ff',bgBlur:12,oVis:true,oBlur:0,sVis:true,sScale:100,sx:0,sy:0,feather:8};
 let V={...V0};
@@ -282,7 +264,7 @@ function sharpen(o,w,h,amt,rad){if(!amt)return;const d=o.data,c=new Uint8Clamped
 function blurC(c,px){const k=Math.max(1,px/1.5),s=mk(c.width/k,c.height/k);s.getContext('2d').drawImage(c,0,0,s.width,s.height);const o=mk(c.width,c.height),x=o.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(s,0,0,c.width,c.height);return o}
 function cropRect(){const fw=full.width,fh=full.height,r=RATIOS[V.ratio][1]||fw/fh;let bw=fw,bh=fw/r;if(bh>fh){bh=fh;bw=fh*r}const z=V.zoom/100,sw=bw/z,sh=bh/z;return{sx:(fw-sw)*(.5+V.dx/200),sy:(fh-sh)*(.5+V.dy/200),sw,sh}}
 function rebuild(){if(!full)return;const c=cropRect(),k=Math.min(1,900/Math.max(c.sw,c.sh));W=Math.round(c.sw*k);H=Math.round(c.sh*k);cv.width=hm.width=W;cv.height=hm.height=H;
- const t=mk(W,H),x=t.getContext('2d',{willReadFrequently:true});x.drawImage(full,c.sx,c.sy,c.sw,c.sh,0,0,W,H);src=x.getImageData(0,0,W,H);sizeInfo()}
+ const t=mk(W,H),x=t.getContext('2d',{willReadFrequently:true});x.drawImage(full,c.sx,c.sy,c.sw,c.sh,0,0,W,H);src=x.getImageData(0,0,W,H);const k2=Math.min(1,200/Math.max(W,H)),lw=Math.max(8,Math.round(W*k2)),lh=Math.max(8,Math.round(H*k2)),lcv=mk(lw,lh),lx=lcv.getContext('2d',{willReadFrequently:true});lx.drawImage(t,0,0,lw,lh);lsrc=lx.getImageData(0,0,lw,lh);sizeInfo()}
 function outDims(){const c=cropRect();const k=V.ai||V.up;let w=c.sw*k,h=c.sh*k;const m=Math.min(1,8000/Math.max(w,h),Math.sqrt(12e6/(w*h)));return[Math.round(w*m),Math.round(h*m)]}
 function sizeInfo(){if(!full)return;const[w,h]=outDims();$('osz').textContent=`Ảnh xuất: ${w}×${h}px (${(w*h/1e6).toFixed(1)} MP)${(V.ai||V.up)>1&&w<cropRect().sw*(V.ai||V.up)-1?', đã giới hạn theo bộ nhớ':''}`}
 
@@ -376,4 +358,30 @@ async function aiTest(){if(!full)return;const st=$('aist');if(!V.ai){st.textCont
   $('aicmp').hidden=false;st.textContent=`Xong sau ${((performance.now()-t0)/1000).toFixed(1)} giây cho vùng ${n}×${n}px, đã gồm thời gian tải mô hình.`}
  catch(e){st.textContent='Lỗi AI: '+(e.message||e)}}
 document.addEventListener('click',e=>{if(e.target.closest('#aiTest'))aiTest()});
+
+/* ===== phân tích realtime + kéo chỉnh trực tiếp ===== */
+const MT=[
+ {id:'br',lb:'Độ sáng',l:'Tối',r:'Sáng',bg:'linear-gradient(90deg,#000,#fff)',zone:[100,150],rng:[0,255],tol:1.5,get:s=>s.mean,fmt:v=>Math.round(v)+'/255',key:'exposure'},
+ {id:'tp',lb:'Nhiệt độ màu',l:'Lạnh',r:'Nóng',bg:'linear-gradient(90deg,#3b82f6,#e5e7eb,#f97316)',zone:[-12,12],rng:[-50,50],tol:.8,get:s=>s.temp,fmt:v=>(v>0?'+':'')+v.toFixed(0),key:'temperature'},
+ {id:'tn',lb:'Sắc thái',l:'Hồng tím',r:'Xanh lá',bg:'linear-gradient(90deg,#d946ef,#ddd,#22c55e)',zone:[-7,7],rng:[-25,25],tol:.5,get:s=>s.tint,fmt:v=>(v>0?'+':'')+v.toFixed(0),key:'tint'},
+ {id:'ct',lb:'Tương phản',l:'Phẳng',r:'Gắt',bg:'linear-gradient(90deg,#8a8a8a,#222)',zone:[48,68],rng:[0,110],tol:.8,get:s=>s.std,fmt:v=>v.toFixed(0),key:'contrast'},
+ {id:'sa',lb:'Bão hòa',l:'Nhạt',r:'Đậm',bg:'linear-gradient(90deg,#888,#ff3b6b,#ffb703,#06d6a0)',zone:[.22,.5],rng:[0,.8],tol:.004,get:s=>s.sat,fmt:v=>(v*100).toFixed(0)+'%',key:'saturation'}];
+const GAIN={exposure:(c,e)=>Math.log2((c+e+8)/(c+8))*40,temperature:(c,e)=>e*1.1,tint:(c,e)=>-e*2,contrast:(c,e)=>e*80/Math.max(c,15),saturation:(c,e)=>e*80/Math.max(c,.04)};
+$('mt').innerHTML=MT.map(m=>`<div class="meter"><div class="lb"><span>${m.lb}</span><b id="mv_${m.id}">–</b></div><div class="bar" id="mb_${m.id}" style="background:${m.bg}"><span class="zn" style="left:${(m.zone[0]-m.rng[0])/(m.rng[1]-m.rng[0])*100}%;width:${(m.zone[1]-m.zone[0])/(m.rng[1]-m.rng[0])*100}%"></span><i id="mi_${m.id}" style="left:50%;opacity:.3"></i></div><div class="lb"><span>${m.l}</span><span>${m.r}</span></div></div>`).join('');
+function liveStats(){const g=process(lsrc,lsrc.width,lsrc.height,P),s=statsData(g.data,g.width,g.height);if(A)s.sharp=A.sharp;return s}
+function live(){if(!lsrc)return;const s=liveStats(),dc={ok:'var(--ok)',wn:'var(--wn)',bd:'var(--bd)'};
+ MT.forEach(m=>{const v=m.get(s),ok=v>=m.zone[0]&&v<=m.zone[1],i=$('mi_'+m.id);i.style.left=cl((v-m.rng[0])/(m.rng[1]-m.rng[0]),0,1)*100+'%';i.style.opacity=1;i.style.background=ok?'var(--ok)':'#fff';$('mv_'+m.id).textContent=m.fmt(v)+(ok?' ✓':'')});
+ const fd=diagnose(s),pen=fd.reduce((t,f)=>t+(f.lv==='bd'?18:f.lv==='wn'?8:0),0),sc=Math.max(5,100-pen),bad=fd.filter(f=>f.lv!=='ok').length;
+ $('scv').textContent=sc;$('scv').style.color=sc>=80?'var(--ok)':sc>=55?'var(--wn)':'var(--bd)';
+ $('scn').textContent=bad?`Còn ${bad} điểm cần xem. Kéo vạch trắng vào khung xanh, số liệu cập nhật ngay.`:'Ảnh khá cân bằng, giờ chỉ cần tinh chỉnh theo ý thích.';
+ $('chp').innerHTML=`<span>Cháy sáng ${s.hi.toFixed(1)}%</span><span>Đen cứng ${s.lo.toFixed(1)}%</span>`;
+ const fe=$('fnd');fe.hidden=!bad;fe.innerHTML=fd.filter(f=>f.lv!=='ok').map(f=>`<div class="fd"><span class="dot" style="background:${dc[f.lv]}"></span><div><b>${f.t}</b><small>${f.d}</small>${f.x?`<em>Gợi ý: ${f.x}</em>`:''}</div></div>`).join('')}
+let drag=null;
+function drive(m,pos){const tv=m.rng[0]+pos*(m.rng[1]-m.rng[0]);
+ for(let i=0;i<8;i++){const c=m.get(liveStats()),e=tv-c;if(Math.abs(e)<m.tol)break;P[m.key]=cl(Math.round((P[m.key]+cl(GAIN[m.key](c,e),-30,30))*10)/10,-100,100)}
+ actPre='';markPre();syncUI();render()}
+const barPos=(e,b)=>{const r=b.getBoundingClientRect();return cl((e.clientX-r.left)/r.width,0,1)};
+$('mt').addEventListener('pointerdown',e=>{const b=e.target.closest('.bar');if(!b||!src)return;drag=MT.find(m=>'mb_'+m.id===b.id);b.setPointerCapture(e.pointerId);drive(drag,barPos(e,b))});
+$('mt').addEventListener('pointermove',e=>{if(drag)drive(drag,barPos(e,$('mb_'+drag.id)))});
+['pointerup','pointercancel'].forEach(t=>$('mt').addEventListener(t,()=>{drag=null}));
 </script></body></html>
