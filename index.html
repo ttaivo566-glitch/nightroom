@@ -51,6 +51,7 @@ input[type=color]{flex:none;width:46px;height:38px;border:1px solid var(--ln);bo
 <label class="btn pri"><input type="file" accept="image/*" capture="environment" id="fcam" hidden>📷 Chụp ảnh</label>
 <label class="btn"><input type="file" accept="image/*" id="ffile" hidden>🖼️ Tải ảnh lên</label></div>
 <div class="row"><button id="hold">👁 Giữ để xem ảnh gốc</button><button id="save">💾 Lưu ảnh</button></div>
+<div class="note" id="busy" hidden></div>
 
 <div class="tabs"><button class="on" data-t="an">Phân tích</button><button data-t="pr">Mẫu màu</button><button data-t="ed">Chỉnh tay</button><button data-t="ht">Nhiệt</button><button data-t="cr">Khung</button><button data-t="sp">Nét</button><button data-t="ly">Tách lớp</button></div>
 
@@ -252,6 +253,8 @@ const hold=$('hold'),showO=on=>{if(!src)return;if(on){ctx.putImageData(src,0,0);
 hold.onpointerdown=e=>{e.preventDefault();showO(true)};hold.onpointerup=hold.onpointerleave=hold.onpointercancel=()=>showO(false);hold.oncontextmenu=e=>e.preventDefault();
 $('save').onclick=async()=>{if(!full)return;
  try{const[w,h]=outDims(),cr=cropRect();let c=mk(cr.sw,cr.sh);c.getContext('2d').drawImage(full,cr.sx,cr.sy,cr.sw,cr.sh,0,0,c.width,c.height);
+ if(V.ai){if(c.width*c.height>1.6e6){alert('Ảnh sau khi cắt khung đã lớn (trên khoảng 1,6 MP) nên không cần AI và sẽ rất chậm. Hãy tắt AI, hoặc phóng to khung để cắt vùng nhỏ hơn.');return}
+  busy('Đang tải mô hình AI…');const im=await aiRun(c,V.ai,p=>busy('Đang phóng to bằng AI… '+Math.round(p*100)+'%'));c=mk(im.width,im.height);c.getContext('2d').drawImage(im,0,0);busy('')}
  while(c.width*2<=w){const n=mk(c.width*2,c.height*2),x=n.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(c,0,0,n.width,n.height);c=n}
  const f=mk(w,h),fx=f.getContext('2d',{willReadFrequently:true});fx.imageSmoothingQuality='high';fx.drawImage(c,0,0,w,h);
  const g=process(fx.getImageData(0,0,w,h),w,h,P);sharpen(g,w,h,V.sharp,V.rad*w/900);
@@ -260,13 +263,13 @@ $('save').onclick=async()=>{if(!full)return;
  o.toBlob(async b=>{const fl=new File([b],'anh-chinh-mau.'+(png?'png':'jpg'),{type:ty});
   if(matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[fl]})){try{await navigator.share({files:[fl]});return}catch(e){if(e.name==='AbortError')return}}
   const a=document.createElement('a');a.href=URL.createObjectURL(fl);a.download=fl.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)},ty,.93)}
- catch(e){alert('Không xuất được ảnh ở kích thước này. Hãy giảm mức phóng to rồi thử lại.')}};
+ catch(e){busy('');alert(V.ai?'Lỗi AI: '+(e.message||e):'Không xuất được ảnh ở kích thước này. Hãy giảm mức phóng to rồi thử lại.')}};
 
 /* ===== khung, nét, tách lớp ===== */
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 let fullFile=null,seg=null,mask=null,bgImg=null,sel=new Set(),segr=null;
 const RATIOS=[['Gốc',0,''],['1:1',1,'Instagram'],['4:5',4/5,'Instagram dọc'],['3:4',3/4,'Chân dung'],['2:3',2/3,'Ảnh in 10×15'],['9:16',9/16,'Story, TikTok'],['16:9',16/9,'YouTube'],['4:3',4/3,'Ảnh điện thoại'],['3:2',3/2,'Máy ảnh'],['21:9',21/9,'Điện ảnh']];
-const V0={ratio:0,zoom:100,dx:0,dy:0,sharp:0,rad:2,up:1,bgType:'none',bgColor:'#ffffff',bgColor2:'#8ec5ff',bgBlur:12,oVis:true,oBlur:0,sVis:true,sScale:100,sx:0,sy:0,feather:8};
+const V0={ratio:0,zoom:100,dx:0,dy:0,sharp:0,rad:2,up:1,ai:0,bgType:'none',bgColor:'#ffffff',bgColor2:'#8ec5ff',bgBlur:12,oVis:true,oBlur:0,sVis:true,sScale:100,sx:0,sy:0,feather:8};
 let V={...V0};
 const CLS=['Nền','Máy bay','Xe đạp','Chim','Thuyền','Chai','Xe buýt','Ô tô','Mèo','Ghế','Bò','Bàn ăn','Chó','Ngựa','Xe máy','Người','Cây chậu','Cừu','Sofa','Tàu hỏa','TV'];
 
@@ -280,8 +283,8 @@ function blurC(c,px){const k=Math.max(1,px/1.5),s=mk(c.width/k,c.height/k);s.get
 function cropRect(){const fw=full.width,fh=full.height,r=RATIOS[V.ratio][1]||fw/fh;let bw=fw,bh=fw/r;if(bh>fh){bh=fh;bw=fh*r}const z=V.zoom/100,sw=bw/z,sh=bh/z;return{sx:(fw-sw)*(.5+V.dx/200),sy:(fh-sh)*(.5+V.dy/200),sw,sh}}
 function rebuild(){if(!full)return;const c=cropRect(),k=Math.min(1,900/Math.max(c.sw,c.sh));W=Math.round(c.sw*k);H=Math.round(c.sh*k);cv.width=hm.width=W;cv.height=hm.height=H;
  const t=mk(W,H),x=t.getContext('2d',{willReadFrequently:true});x.drawImage(full,c.sx,c.sy,c.sw,c.sh,0,0,W,H);src=x.getImageData(0,0,W,H);sizeInfo()}
-function outDims(){const c=cropRect();let w=c.sw*V.up,h=c.sh*V.up;const m=Math.min(1,8000/Math.max(w,h),Math.sqrt(12e6/(w*h)));return[Math.round(w*m),Math.round(h*m)]}
-function sizeInfo(){if(!full)return;const[w,h]=outDims();$('osz').textContent=`Ảnh xuất: ${w}×${h}px (${(w*h/1e6).toFixed(1)} MP)${V.up>1&&w<cropRect().sw*V.up-1?', đã giới hạn theo bộ nhớ':''}`}
+function outDims(){const c=cropRect();const k=V.ai||V.up;let w=c.sw*k,h=c.sh*k;const m=Math.min(1,8000/Math.max(w,h),Math.sqrt(12e6/(w*h)));return[Math.round(w*m),Math.round(h*m)]}
+function sizeInfo(){if(!full)return;const[w,h]=outDims();$('osz').textContent=`Ảnh xuất: ${w}×${h}px (${(w*h/1e6).toFixed(1)} MP)${(V.ai||V.up)>1&&w<cropRect().sw*(V.ai||V.up)-1?', đã giới hạn theo bộ nhớ':''}`}
 
 function buildMask(){if(!seg)return;const{w,h}=seg,c=mk(w,h),x=c.getContext('2d'),id=x.createImageData(w,h),d=id.data;
  for(let i=0;i<w*h;i++)d[i*4+3]=seg.cat?(sel.has(seg.cat[i])?255:0):seg.alpha[i];
@@ -330,8 +333,8 @@ const lyr=(t,key,body)=>`<div class="card"><div class="lh"><b>${t}</b><button cl
 const markBg=()=>document.querySelectorAll('[data-ck="bgType"]').forEach(b=>b.classList.toggle('on',b.dataset.cv===V.bgType));
 function buildNew(){
  $('crc').innerHTML=chips('ratio',RATIOS.map((r,i)=>[r[0]+(r[2]?' · '+r[2]:''),i]),'crop')+sld('Phóng to khung (%)',100,300,'zoom','crop')+sld('Dịch ngang',-100,100,'dx','crop')+sld('Dịch dọc',-100,100,'dy','crop');
- $('spc').innerHTML=sld('Độ nét',0,100,'sharp','sharp')+sld('Bán kính nét',1,6,'rad','r',.5)+'<div class="note">Phóng to khi xuất ảnh</div>'+chips('up',[['1×',1],['1.5×',1.5],['2×',2],['3×',3],['4×',4]],'sharp')
-  +'<div class="note">Phóng to dùng nội suy rồi làm nét, giúp ảnh in hoặc xem lớn đỡ vỡ nhưng không tạo ra chi tiết thật như AI. Mức 2× thường là hợp lý. Xem trước ở độ phân giải thấp, hiệu ứng rõ nhất khi xuất ảnh.</div>';
+ $('spc').innerHTML=sld('Độ nét',0,100,'sharp','sharp')+sld('Bán kính nét',1,6,'rad','r',.5)+'<div class="note"><b>Phóng to bằng AI</b> (ESRGAN, chạy ngay trên máy bạn)</div>'+chips('ai',[['Tắt',0],['AI 2×',2],['AI 3×',3],['AI 4×',4]],'sharp')+'<div class="row"><button id="aiTest">🔬 Thử AI trên vùng giữa ảnh</button></div><div class="note" id="aist"></div><div id="aicmp" hidden><div class="row"><canvas id="aiA" style="width:50%"></canvas><canvas id="aiB" style="width:50%"></canvas></div><div class="lb"><span>Phóng thường</span><span>Phóng bằng AI</span></div></div><div class="note">Phóng to thường (khi tắt AI)</div>'+chips('up',[['1×',1],['1.5×',1.5],['2×',2],['3×',3],['4×',4]],'sharp')
+  +'<div class="note">AI vẽ thêm chi tiết nên hợp với ảnh nhỏ hoặc bị vỡ. AI chỉ chạy khi lưu ảnh, chỉ dùng cho ảnh sau khi cắt khung dưới khoảng 1,6 MP, lần đầu cần mạng để tải thư viện và mô hình. Phóng to thường chỉ nội suy rồi làm nét. Mức 2× thường là hợp lý. Xem trước ở độ phân giải thấp, hiệu ứng rõ nhất khi xuất ảnh.</div>';
  $('lyc').innerHTML=lyr('Vật thể','sVis',sld('Kích thước (%)',20,250,'sScale','r')+sld('Dịch ngang',-100,100,'sx','r')+sld('Dịch dọc',-100,100,'sy','r')+sld('Làm mịn viền',0,30,'feather','mask'))
   +lyr('Ảnh gốc','oVis',sld('Làm mờ (phông mờ)',0,40,'oBlur','r'))
   +'<div class="card"><div class="lh"><b>Nền mới</b></div>'+chips('bgType',[['Trong suốt','none'],['Màu đơn','color'],['Gradient','grad'],['Ảnh gốc mờ','blur'],['Ảnh khác','img']],'r')
@@ -349,4 +352,28 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-ck],[data-
  else if(d.o){const i=+d.o;sel.has(i)?sel.delete(i):sel.add(i);buildMask();showObjs();render()}
  else if(d.q){if(d.q==='blur'){V.oVis=true;V.oBlur=14;V.bgType='none'}else{V.oVis=false;V.bgType=d.q==='color'?'color':'none'}buildNew();render()}});
 buildNew();
+
+/* ===== AI phóng to (ESRGAN slim chạy bằng TensorFlow.js) ===== */
+const CDN='https://cdn.jsdelivr.net/npm/',busy=m=>{const b=$('busy');b.hidden=!m;b.textContent=m||''};
+const ld=u=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>no(new Error('Không tải được thư viện AI, hãy kiểm tra mạng'));document.head.appendChild(s)});
+const aiUp={};
+async function aiGet(sc){
+ if(!window.tf)await ld(CDN+'@tensorflow/tfjs@4.11.0/dist/tf.min.js');
+ if(!window.DefaultUpscalerJSModel)await ld(CDN+'@upscalerjs/default-model@1.0.0/dist/umd/index.min.js');
+ if(!window['ESRGANSlim'+sc+'x'])await ld(CDN+'@upscalerjs/esrgan-slim@1.0.0/dist/umd/models/esrgan-slim/src/x'+sc+'/index.min.js');
+ if(!window.Upscaler)await ld(CDN+'upscaler@1.0.0/dist/browser/umd/upscaler.min.js');
+ if(!aiUp[sc]){const U=window.Upscaler.default||window.Upscaler;aiUp[sc]=new U({model:window['ESRGANSlim'+sc+'x']})}
+ return aiUp[sc]}
+async function aiRun(cnv,sc,prog){
+ const u=await aiGet(sc),t=tf.browser.fromPixels(cnv);
+ try{const out=await u.upscale(t,{patchSize:64,padding:4,awaitNextFrame:true,progress:p=>prog&&prog(p>1?p/100:p)});
+  const im=new Image();await new Promise((ok,no)=>{im.onload=ok;im.onerror=()=>no(new Error('Không đọc được kết quả AI'));im.src=out});return im}
+ finally{t.dispose()}}
+async function aiTest(){if(!full)return;const st=$('aist');if(!V.ai){st.textContent='Hãy chọn AI 2×, 3× hoặc 4× trước.';return}
+ const c=cropRect(),n=Math.floor(Math.min(150,c.sw,c.sh)),a=mk(n,n);a.getContext('2d').drawImage(full,c.sx+c.sw/2-n/2,c.sy+c.sh/2-n/2,n,n,0,0,n,n);
+ try{st.textContent='Đang tải mô hình AI (lần đầu vài MB)…';const t0=performance.now(),im=await aiRun(a,V.ai,p=>st.textContent='Đang xử lý '+Math.round(p*100)+'%'),sz=n*V.ai,L=$('aiA'),R=$('aiB');
+  L.width=R.width=sz;L.height=R.height=sz;const lx=L.getContext('2d');lx.imageSmoothingQuality='high';lx.drawImage(a,0,0,sz,sz);R.getContext('2d').drawImage(im,0,0,sz,sz);
+  $('aicmp').hidden=false;st.textContent=`Xong sau ${((performance.now()-t0)/1000).toFixed(1)} giây cho vùng ${n}×${n}px, đã gồm thời gian tải mô hình.`}
+ catch(e){st.textContent='Lỗi AI: '+(e.message||e)}}
+document.addEventListener('click',e=>{if(e.target.closest('#aiTest'))aiTest()});
 </script></body></html>
