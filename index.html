@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10131b">
+<title>Studio AI — Photo Lab</title>
+<style>
+:root{--bg:#0d1017;--panel:#171c27;--panel2:#202737;--line:#2c3546;--text:#eef2f8;--muted:#9ba8ba;--accent:#8eabff;--accent2:#b8a3ff;--good:#7de0bd;--danger:#ff8e9a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% -10%,#26304b 0,transparent 36%),var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:#252e40;color:var(--text);padding:10px 13px;border-radius:10px;transition:.15s}button:hover{border-color:#7188bd;background:#303b51}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:linear-gradient(135deg,#6688ec,#8b72d7);border:0;color:white;font-weight:700}.primary:hover{filter:brightness(1.1)}.quiet{background:transparent}.danger{color:#ffb0b7}.app{max-width:1500px;margin:auto;padding:20px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#6e9cff,#b18bff);display:grid;place-items:center;font-size:22px;box-shadow:0 8px 28px #6c82ff44}.brand h1{font-size:18px;margin:0;letter-spacing:.2px}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.top-actions{display:flex;gap:8px;flex-wrap:wrap}.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}.stage-card,.panel{background:linear-gradient(180deg,#191f2c,#151a24);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px #0003}.stage-head{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.stage-head strong{font-size:13px}.stage-head span{color:var(--muted);font-size:12px}.stage{min-height:560px;display:grid;place-items:center;padding:22px;position:relative;background-color:#111722;background-image:linear-gradient(45deg,#ffffff09 25%,transparent 25%),linear-gradient(-45deg,#ffffff09 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ffffff09 75%),linear-gradient(-45deg,transparent 75%,#ffffff09 75%);background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0}.empty{max-width:390px;text-align:center;padding:32px}.empty .big{font-size:54px}.empty h2{font-size:19px;margin:10px 0 6px}.empty p{color:var(--muted);margin:0 0 18px}.canvas-wrap{position:relative;max-width:100%;max-height:72vh;display:none;box-shadow:0 14px 50px #0008}.canvas-wrap canvas{display:block;max-width:100%;max-height:72vh;width:auto;height:auto;touch-action:none}.canvas-wrap #paint{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}.stage-foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px;gap:8px}.side{display:grid;gap:12px}.panel{padding:14px}.panel h3{margin:0 0 12px;font-size:13px;letter-spacing:.2px}.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:#111722;padding:5px;border-radius:11px;margin-bottom:12px}.tab{padding:8px 4px;font-size:11px;border:0;background:transparent;color:var(--muted)}.tab.active{background:#303c54;color:white}.section{display:none}.section.active{display:block}.field{margin:12px 0}.field label{display:flex;justify-content:space-between;gap:10px;color:#c9d2e1;font-size:12px;margin-bottom:7px}.field output{color:var(--accent);font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:#91aaff}input[type=color]{width:100%;height:38px;border:1px solid var(--line);background:transparent;border-radius:8px;padding:3px}select{width:100%;padding:9px;background:#222b3b;color:var(--text);border:1px solid var(--line);border-radius:9px}.btnrow{display:flex;gap:7px;flex-wrap:wrap}.btnrow>*{flex:1}.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.swatch{height:30px;padding:0;border-radius:8px;border:2px solid #ffffff25}.note{color:var(--muted);font-size:11px;line-height:1.5}.status{font-size:12px;color:var(--muted);min-height:18px;margin-top:8px}.status.good{color:var(--good)}.status.bad{color:var(--danger)}.drop{border:1px dashed #65769a;border-radius:12px;padding:13px;text-align:center;color:var(--muted);font-size:12px;margin-top:12px}.drop.drag{border-color:var(--accent);background:#829eff14}.toolhint{background:#202a3b;border-radius:9px;padding:9px;color:#c8d5ec;font-size:11px;margin:9px 0}.hidden{display:none!important}.footer{margin:16px 3px;color:#8490a3;font-size:11px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:20px;background:#29364b;color:#cbd8f3;font-size:10px}.progress{height:4px;background:#293244;border-radius:8px;overflow:hidden;margin-top:8px}.progress>i{display:block;width:0;height:100%;background:linear-gradient(90deg,#83a5ff,#c2a4ff);transition:width .2s}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.stage{min-height:380px}.canvas-wrap canvas{max-height:58vh}.canvas-wrap{max-width:100%}.side{grid-template-columns:repeat(2,minmax(0,1fr))}.side .panel:first-child{grid-column:1/-1}}
+@media(max-width:560px){.app{padding:12px}.top{align-items:flex-start}.brand p{max-width:190px}.top-actions button{padding:8px;font-size:11px}.stage{padding:10px;min-height:300px}.side{grid-template-columns:1fr}.side .panel:first-child{grid-column:auto}.stage-foot{font-size:10px}.stage-head{padding:11px}}
+</style>
+</head>
+<body>
+<div class="app">
+ <header class="top">
+  <div class="brand"><div class="logo">✦</div><div><h1>STUDIO AI <span class="pill">PHOTO LAB</span></h1><p>Chỉnh ảnh chân dung — xử lý ngay trên thiết bị</p></div></div>
+  <div class="top-actions">
+   <button id="openBtn" class="primary">＋ Mở ảnh</button>
+   <button id="undoBtn" disabled>↶ Hoàn tác</button>
+   <button id="resetBtn" disabled>Đặt lại</button>
+   <button id="exportBtn" class="primary" disabled>Xuất ảnh ↓</button>
+  </div>
+ </header>
+ <main class="layout">
+  <section class="stage-card">
+   <div class="stage-head"><strong>BẢNG VẼ / XEM TRƯỚC</strong><span id="imageInfo">Chưa có ảnh</span></div>
+   <div class="stage" id="stage">
+    <div class="empty" id="empty"><div class="big">▧</div><h2>Bắt đầu với một bức ảnh</h2><p>Tải ảnh chân dung hoặc ảnh cần tách nền. Ảnh được xử lý cục bộ trong trình duyệt.</p><button class="primary" id="emptyOpen">Chọn ảnh từ thiết bị</button></div>
+    <div class="canvas-wrap" id="canvasWrap"><canvas id="preview"></canvas><canvas id="paint"></canvas></div>
+   </div>
+   <div class="stage-foot"><span id="stageStatus">Chưa tải ảnh</span><span>Ctrl/⌘ + Z: hoàn tác</span></div>
+  </section>
+  <aside class="side">
+   <section class="panel">
+    <h3>KHÔNG GIAN LÀM VIỆC</h3>
+    <div class="tabs">
+     <button class="tab active" data-tab="cut">Tách nền</button><button class="tab" data-tab="bg">Phông nền</button><button class="tab" data-tab="light">Ánh sáng</button><button class="tab" data-tab="detail">Làm nét</button>
+    </div>
+    <div class="section active" id="sec-cut">
+     <button class="primary" id="aiBtn" style="width:100%">✦ Tách nền bằng AI</button>
+     <div class="status" id="aiStatus">AI sẽ tải mô hình lần đầu (cần Internet). Ảnh không được tải lên máy chủ.</div><div class="progress"><i id="aiProgress"></i></div>
+     <div class="field"><label>Chế độ cọ</label><select id="brushMode"><option value="erase">Xóa nền (đỏ)</option><option value="restore">Giữ lại chủ thể (xanh)</option></select></div>
+     <div class="field"><label>Kích thước cọ <output id="brushVal">36 px</output></label><input id="brushSize" type="range" min="5" max="180" value="36"></div>
+     <div class="btnrow"><button id="clearMaskBtn">Xóa toàn bộ mask</button><button id="invertMaskBtn">Đảo mask</button></div>
+     <div class="toolhint">AI không chính xác? Dùng cọ đỏ tô vùng cần bỏ, cọ xanh phục hồi vùng cần giữ. Phóng to trình duyệt để chỉnh chi tiết tóc và viền.</div>
+     <div class="note">Mask là mặt nạ alpha thủ công, không cần kết nối dịch vụ bên ngoài. Nút đảo mask hữu ích khi AI nhận nhầm chủ thể/nền.</div>
+    </div>
+    <div class="section" id="sec-bg">
+     <div class="field"><label>Màu nền</label><input id="bgColor" type="color" value="#dce6f4"></div>
+     <div class="swatches">
+      <button class="swatch" data-color="#ffffff" style="background:#fff" title="Trắng"></button><button class="swatch" data-color="#dce6f4" style="background:#dce6f4" title="Xám xanh"></button><button class="swatch" data-color="#9fc5e8" style="background:#9fc5e8" title="Xanh nhạt"></button><button class="swatch" data-color="#1f4e79" style="background:#1f4e79" title="Xanh dương"></button><button class="swatch" data-color="#b32635" style="background:#b32635" title="Đỏ"></button><button class="swatch" data-color="#333842" style="background:#333842" title="Than"></button>
+     </div>
+     <div class="field"><label>Kiểu nền</label><select id="bgMode"><option value="solid">Màu đơn</option><option value="gradient">Gradient studio</option><option value="transparent">Trong suốt</option></select></div>
+     <div class="field"><label>Màu gradient</label><input id="bgColor2" type="color" value="#657fa5"></div>
+     <div class="field"><label>Độ mờ nền <output id="blurVal">0</output></label><input id="bgBlur" type="range" min="0" max="24" value="0"></div>
+     <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="showOriginalBg"> Giữ nền gốc (tắt tách nền)</label>
+    </div>
+    <div class="section" id="sec-light">
+     <div class="field"><label>Preset ánh sáng</label><select id="lightPreset"><option value="soft">Soft Studio — mềm</option><option value="rembrandt">Rembrandt — lệch bên</option><option value="rim">Rim Light — viền sáng</option><option value="high">High Key — sáng đều</option></select></div>
+     <div class="field"><label>Cường độ <output id="lightVal">30%</output></label><input id="lightPower" type="range" min="0" max="100" value="30"></div>
+     <div class="field"><label>Hướng sáng <output id="lightDirVal">35°</output></label><input id="lightDir" type="range" min="0" max="360" value="35"></div>
+     <div class="field"><label>Độ mềm <output id="softVal">70%</output></label><input id="lightSoft" type="range" min="5" max="100" value="70"></div>
+     <div class="field"><label>Nhiệt độ màu <output id="tempVal">0</output></label><input id="lightTemp" type="range" min="-40" max="40" value="0"></div>
+     <div class="note">Đây là mô phỏng ánh sáng hậu kỳ bằng lớp phủ Canvas, không phải tái chiếu sáng AI vật lý. Có thể bật/tắt để so sánh.</div>
+    </div>
+    <div class="section" id="sec-detail">
+     <button class="primary" id="upscaleBtn" style="width:100%">✦ AI Super Resolution 2×</button>
+     <div class="status" id="upStatus">Dùng Swin2SR ONNX qua Transformers.js. Mô hình tải lần đầu khoảng vài chục MB.</div><div class="progress"><i id="upProgress"></i></div>
+     <div class="field"><label>Mức làm rõ (Canvas) <output id="sharpVal">0</output></label><input id="sharpness" type="range" min="0" max="100" value="0"></div>
+     <div class="field"><label>Giảm nhiễu nhẹ <output id="noiseVal">0</output></label><input id="denoise" type="range" min="0" max="5" value="0"></div>
+     <div class="note">AI Super Resolution tạo chi tiết dự đoán từ mô hình đã huấn luyện, không phải nội suy kích thước. Kết quả có thể thay đổi chi tiết khuôn mặt; hãy kiểm tra trước khi dùng. Làm rõ và giảm nhiễu ở đây là bộ lọc hậu kỳ nhẹ.</div>
+    </div>
+   </section>
+   <section class="panel">
+    <h3>CÔNG CỤ & XUẤT ẢNH</h3>
+    <div class="btnrow"><button id="compareBtn">Giữ để xem ảnh gốc</button><button id="fitBtn">Vừa khung</button></div>
+    <div class="field"><label>Định dạng</label><select id="exportFormat"><option value="image/png">PNG — giữ nền trong suốt</option><option value="image/jpeg">JPG — ảnh nền</option><option value="image/webp">WebP — dung lượng nhỏ</option></select></div>
+    <div class="field"><label>Chất lượng JPG/WebP <output id="qualityVal">92%</output></label><input id="quality" type="range" min="50" max="100" value="92"></div>
+    <div class="note">Ảnh đầu ra giữ kích thước ảnh hiện tại; sau khi chạy AI upscale, kích thước tăng theo kết quả mô hình. Không tải ảnh lên máy chủ.</div>
+    <div class="drop" id="drop">Kéo thả ảnh vào đây · JPG / PNG / WebP</div>
+   </section>
+  </aside>
+ </main>
+ <div class="footer"><span>Studio AI · xử lý tại thiết bị · không lưu ảnh lên máy chủ</span><span>AI model: IMG.LY Background Removal · Swin2SR / Transformers.js</span></div>
+ <input id="fileInput" type="file" accept="image/*" hidden>
+</div>
+<script type="module">
+const $=id=>document.getElementById(id);
+const preview=$('preview'), pctx=preview.getContext('2d'), paint=$('paint'), xctx=paint.getContext('2d');
+let original=null, originalBitmap=null, sourceBlob=null, mask=null, maskCtx=null, width=0,height=0, aiBlob=null, history=[], brushDown=false, compare=false, aiBusy=false, upscaleBusy=false, upscaler=null;
+let settings={bg:'#dce6f4',bg2:'#657fa5',bgMode:'solid',blur:0,light:30,dir:35,soft:70,temp:0,sharp:0,denoise:0,keepBg:false,lightPreset:'soft'};
+function setStatus(id,msg,type=''){const el=$(id);el.textContent=msg;el.className='status '+type}
+function progress(id,v){$(id).style.width=Math.max(0,Math.min(100,v))+'%'}
+function enable(){['aiBtn','resetBtn','exportBtn','compareBtn','clearMaskBtn','invertMaskBtn','fitBtn','upscaleBtn'].forEach(id=>$(id).disabled=!original)}
+function loadImage(file){if(!file||!file.type.startsWith('image/'))return;sourceBlob=file;const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{original=img;originalBitmap=null;width=img.naturalWidth;height=img.naturalHeight;const max=2600,scale=Math.min(1,max/Math.max(width,height));if(scale<1){width=Math.round(width*scale);height=Math.round(height*scale)};preview.width=paint.width=width;preview.height=paint.height=height;mask=document.createElement('canvas');mask.width=width;mask.height=height;maskCtx=mask.getContext('2d',{willReadFrequently:true});maskCtx.fillStyle='#fff';maskCtx.fillRect(0,0,width,height);aiBlob=null;history=[];$('empty').classList.add('hidden');$('canvasWrap').style.display='block';$('imageInfo').textContent=`${img.naturalWidth} × ${img.naturalHeight}px`;$('stageStatus').textContent='Ảnh đã tải · chưa tách nền';$('showOriginalBg').checked=true;settings.keepBg=true;render();enable();URL.revokeObjectURL(url)};img.onerror=()=>alert('Không thể mở ảnh này.');img.src=url}
+function snapshot(){if(!mask)return;try{history.push({mask:maskCtx.getImageData(0,0,width,height),settings:{...settings}});if(history.length>15)history.shift();$('undoBtn').disabled=false}catch(e){}}
+function restoreHistory(){const s=history.pop();if(!s)return;maskCtx.putImageData(s.mask,0,0);settings={...s.settings};syncControls();render();$('undoBtn').disabled=!history.length}
+function syncControls(){ $('bgColor').value=settings.bg;$('bgColor2').value=settings.bg2;$('bgMode').value=settings.bgMode;$('bgBlur').value=settings.blur;$('lightPower').value=settings.light;$('lightDir').value=settings.dir;$('lightSoft').value=settings.soft;$('lightTemp').value=settings.temp;$('sharpness').value=settings.sharp;$('denoise').value=settings.denoise;$('showOriginalBg').checked=settings.keepBg;updateLabels()}
+function updateLabels(){$('brushVal').textContent=$('brushSize').value+' px';$('blurVal').textContent=settings.blur;$('lightVal').textContent=settings.light+'%';$('lightDirVal').textContent=settings.dir+'°';$('softVal').textContent=settings.soft+'%';$('tempVal').textContent=settings.temp;$('sharpVal').textContent=settings.sharp;$('noiseVal').textContent=settings.denoise;$('qualityVal').textContent=$('quality').value+'%'}
+function drawBase(ctx){ctx.clearRect(0,0,width,height);if(settings.bgMode==='transparent')return;if(settings.bgMode==='gradient'){const g=ctx.createLinearGradient(0,0,width,height);g.addColorStop(0,settings.bg);g.addColorStop(1,settings.bg2);ctx.fillStyle=g}else ctx.fillStyle=settings.bg;ctx.fillRect(0,0,width,height)}
+function render(){if(!original)return;const fg=document.createElement('canvas');fg.width=width;fg.height=height;const f=fg.getContext('2d');f.drawImage(original,0,0,width,height);
+ if(!settings.keepBg){const d=f.getImageData(0,0,width,height),m=maskCtx.getImageData(0,0,width,height).data;for(let i=0;i<d.data.length;i+=4)d.data[i+3]=Math.round(d.data[i+3]*m[i]);f.putImageData(d,0,0)}
+ // Soft studio lighting overlay on foreground only
+ if(settings.light>0){const power=settings.light/100,soft=settings.soft/100,angle=settings.dir*Math.PI/180;const lx=width*(.5+Math.cos(angle)*.42),ly=height*(.5+Math.sin(angle)*.42);f.save();f.globalCompositeOperation='screen';const radius=Math.max(width,height)*(.18+.75*soft);const grad=f.createRadialGradient(lx,ly,0,lx,ly,radius);grad.addColorStop(0,`rgba(${settings.temp>0?255:225},${settings.temp<0?238:245},${settings.temp<0?255:235},${power*.65})`);grad.addColorStop(1,'rgba(255,255,255,0)');f.fillStyle=grad;f.fillRect(0,0,width,height);
+ if(settings.lightPreset==='rim'){const edge=f.createLinearGradient(0,0,width,0);edge.addColorStop(0,`rgba(190,220,255,${power*.5})`);edge.addColorStop(.14,'rgba(255,255,255,0)');edge.addColorStop(.86,'rgba(255,255,255,0)');edge.addColorStop(1,`rgba(190,220,255,${power*.5})`);f.fillStyle=edge;f.fillRect(0,0,width,height)}
+ if(settings.lightPreset==='high'){f.fillStyle=`rgba(255,245,232,${power*.12})`;f.fillRect(0,0,width,height)}f.restore()}
+ // Sharpness via subtle unsharp overlay (canvas filter fallback)
+ if(settings.sharp>0){const tmp=document.createElement('canvas');tmp.width=width;tmp.height=height;const t=tmp.getContext('2d');t.filter=`contrast(${100+settings.sharp*.12}%) saturate(${100+settings.sharp*.04}%)`;t.drawImage(fg,0,0);f.globalAlpha=Math.min(.35,settings.sharp/300);f.drawImage(tmp,0,0);f.globalAlpha=1}
+ pctx.clearRect(0,0,width,height);drawBase(pctx);
+ if(settings.blur>0&&settings.bgMode!=='transparent'&&!settings.keepBg){const bg=document.createElement('canvas');bg.width=width;bg.height=height;const b=bg.getContext('2d');b.drawImage(original,0,0,width,height);b.filter=`blur(${settings.blur}px)`;pctx.globalAlpha=.12;pctx.drawImage(bg,0,0);pctx.globalAlpha=1}
+ pctx.drawImage(fg,0,0);
+ paint.style.pointerEvents=$('brushMode').value?'auto':'none';
+ $('stageStatus').textContent=settings.keepBg?'Ảnh gốc + hiệu ứng':'Đang xem ảnh đã tách nền';
+}
+function updateMaskFromBlob(blob){return new Promise((resolve,reject)=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=width;c.height=height;const cctx=c.getContext('2d');cctx.drawImage(im,0,0,width,height);const rgba=cctx.getImageData(0,0,width,height),out=maskCtx.createImageData(width,height);for(let i=0;i<rgba.data.length;i+=4){const a=rgba.data[i+3];out.data[i]=out.data[i+1]=out.data[i+2]=out.data[i+3]=a}maskCtx.putImageData(out,0,0);URL.revokeObjectURL(u);resolve()};im.onerror=reject;im.src=u})}
+$('aiBtn').onclick=async()=>{if(!original||aiBusy)return;aiBusy=true;$('aiBtn').disabled=true;setStatus('aiStatus','Đang tải mô hình AI lần đầu…');progress('aiProgress',5);try{const mod=await import('https://esm.sh/@imgly/background-removal@1.7.0?bundle');const remove=mod.default||mod;progress('aiProgress',20);const blob=await remove(sourceBlob,{model:'isnet_fp16',device:(navigator.gpu?'gpu':'cpu'),progress:(key,current,total)=>{if(total)progress('aiProgress',20+Math.round(current/total*65));setStatus('aiStatus','Đang xử lý: '+key)}});snapshot();await updateMaskFromBlob(blob);aiBlob=blob;settings.keepBg=false;$('showOriginalBg').checked=false;render();progress('aiProgress',100);setStatus('aiStatus','Đã tách nền bằng AI. Có thể dùng cọ để sửa vùng biên.','good');$('stageStatus').textContent='AI tách nền hoàn tất'}catch(e){console.error(e);setStatus('aiStatus','Không tải/chạy được mô hình AI. Kiểm tra Internet, sau đó thử lại hoặc dùng cọ thủ công. Chi tiết: '+(e.message||e),'bad')}finally{aiBusy=false;$('aiBtn').disabled=false}};
+function point(e){const r=paint.getBoundingClientRect();return{x:(e.clientX-r.left)*width/r.width,y:(e.clientY-r.top)*height/r.height}}
+function brush(e){if(!brushDown)return;const p=point(e),mode=$('brushMode').value;maskCtx.save();maskCtx.globalCompositeOperation='source-over';maskCtx.strokeStyle=mode==='erase'?'rgba(0,0,0,0)':'rgba(255,255,255,1)';maskCtx.fillStyle=mode==='erase'?'rgba(0,0,0,0)':'#fff';maskCtx.lineWidth=+$('brushSize').value*width/paint.getBoundingClientRect().width;maskCtx.lineCap='round';maskCtx.lineJoin='round';if(mode==='erase')maskCtx.globalCompositeOperation='destination-out';else maskCtx.globalCompositeOperation='source-over';if(!brush.last){maskCtx.beginPath();maskCtx.arc(p.x,p.y,maskCtx.lineWidth/2,0,Math.PI*2);maskCtx.fill()}else{maskCtx.beginPath();maskCtx.moveTo(brush.last.x,brush.last.y);maskCtx.lineTo(p.x,p.y);maskCtx.stroke()}maskCtx.restore();brush.last=p;render()}
+paint.addEventListener('pointerdown',e=>{if(!original||settings.keepBg)return;snapshot();brushDown=true;brush.last=null;paint.setPointerCapture(e.pointerId);brush(e)});
+paint.addEventListener('pointermove',e=>{if(brushDown)brush(e)});
+paint.addEventListener('pointerup',()=>{brushDown=false;brush.last=null});
+paint.addEventListener('pointercancel',()=>{brushDown=false;brush.last=null});
+$('clearMaskBtn').onclick=()=>{if(!mask)return;snapshot();maskCtx.clearRect(0,0,width,height);render()};
+$('invertMaskBtn').onclick=()=>{if(!mask)return;snapshot();const d=maskCtx.getImageData(0,0,width,height);for(let i=0;i<d.data.length;i+=4){const a=255-d.data[i];d.data[i]=d.data[i+1]=d.data[i+2]=d.data[i+3]=a}maskCtx.putImageData(d,0,0);render()};
+$('undoBtn').onclick=restoreHistory;
+$('resetBtn').onclick=()=>{if(!original)return;snapshot();maskCtx.fillStyle='#fff';maskCtx.fillRect(0,0,width,height);settings={bg:'#dce6f4',bg2:'#657fa5',bgMode:'solid',blur:0,light:30,dir:35,soft:70,temp:0,sharp:0,denoise:0,keepBg:true,lightPreset:'soft'};syncControls();render();setStatus('aiStatus','Đã đặt lại mặt nạ và hiệu ứng.')};
+$('showOriginalBg').onchange=e=>{settings.keepBg=e.target.checked;render()};
+$('bgColor').oninput=e=>{settings.bg=e.target.value;render()};$('bgColor2').oninput=e=>{settings.bg2=e.target.value;render()};$('bgMode').onchange=e=>{settings.bgMode=e.target.value;render()};$('bgBlur').oninput=e=>{settings.blur=+e.target.value;updateLabels();render()};
+document.querySelectorAll('.swatch').forEach(b=>b.onclick=()=>{$('bgColor').value=b.dataset.color;settings.bg=b.dataset.color;render()});
+$('lightPower').oninput=e=>{settings.light=+e.target.value;updateLabels();render()};$('lightDir').oninput=e=>{settings.dir=+e.target.value;updateLabels();render()};$('lightSoft').oninput=e=>{settings.soft=+e.target.value;updateLabels();render()};$('lightTemp').oninput=e=>{settings.temp=+e.target.value;updateLabels();render()};$('lightPreset').onchange=e=>{settings.lightPreset=e.target.value;render()};
+$('sharpness').oninput=e=>{settings.sharp=+e.target.value;updateLabels();render()};$('denoise').oninput=e=>{settings.denoise=+e.target.value;updateLabels();render()};$('brushSize').oninput=updateLabels;$('quality').oninput=updateLabels;
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='sec-'+b.dataset.tab))});
+$('openBtn').onclick=$('emptyOpen').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>loadImage(e.target.files[0]);
+const drop=$('drop');['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>loadImage(e.dataTransfer.files[0]));$('stage').addEventListener('dragover',e=>e.preventDefault());$('stage').addEventListener('drop',e=>{e.preventDefault();loadImage(e.dataTransfer.files[0])});
+$('compareBtn').onpointerdown=()=>{if(!original)return;compare=true;pctx.clearRect(0,0,width,height);pctx.drawImage(original,0,0,width,height)};$('compareBtn').onpointerup=$('compareBtn').onpointerleave=()=>{if(compare){compare=false;render()}};
+$('fitBtn').onclick=()=>{document.querySelector('.stage').scrollIntoView({behavior:'smooth',block:'center'})};
+$('exportBtn').onclick=()=>{if(!original)return;const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');const format=$('exportFormat').value;if(format!=='image/png'||settings.bgMode!=='transparent')drawBase(ctx);if(settings.keepBg){ctx.drawImage(original,0,0,width,height)}else{const fg=document.createElement('canvas');fg.width=width;fg.height=height;const f=fg.getContext('2d');f.drawImage(original,0,0,width,height);const d=f.getImageData(0,0,width,height),m=maskCtx.getImageData(0,0,width,height).data;for(let i=0;i<d.data.length;i+=4)d.data[i+3]=Math.round(d.data[i+3]*m[i]);f.putImageData(d,0,0);ctx.drawImage(fg,0,0)}
+ // lighting export follows same preview rendering
+ if(settings.light>0){ctx.save();ctx.globalCompositeOperation='screen';const a=settings.dir*Math.PI/180,x=width*(.5+Math.cos(a)*.42),y=height*(.5+Math.sin(a)*.42),r=Math.max(width,height)*(.18+.75*settings.soft/100),g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(245,245,240,${settings.light/100*.65})`);g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,width,height);ctx.restore()}
+ const mime=format; c.toBlob(blob=>{if(!blob){alert('Không xuất được ảnh.');return}const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download='studio-ai-'+Date.now()+'.'+(mime==='image/jpeg'?'jpg':mime==='image/webp'?'webp':'png');a.click();setTimeout(()=>URL.revokeObjectURL(u),1500)},mime,+$('quality').value/100)};
+$('upscaleBtn').onclick=async()=>{if(!original||upscaleBusy)return;upscaleBusy=true;$('upscaleBtn').disabled=true;setStatus('upStatus','Đang tải Transformers.js và mô hình Swin2SR…');progress('upProgress',8);try{const {pipeline}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2');if(!upscaler){upscaler=await pipeline('image-to-image','Xenova/swin2SR-classical-sr-x2-64',{dtype:'q8',progress_callback:x=>{if(x.progress)progress('upProgress',Math.min(85,10+x.progress*.75))}})}progress('upProgress',88);const inputBlob=await new Promise(r=>preview.toBlob(r,'image/png'));const url=URL.createObjectURL(inputBlob);const out=await upscaler(url);URL.revokeObjectURL(url);const outCanvas=document.createElement('canvas');outCanvas.width=out.width;outCanvas.height=out.height;const oc=outCanvas.getContext('2d');const rgba=new Uint8ClampedArray(out.width*out.height*4);for(let i=0,j=0;i<out.data.length;i+=out.channels,j+=4){rgba[j]=out.data[i];rgba[j+1]=out.data[i+1]??out.data[i];rgba[j+2]=out.data[i+2]??out.data[i];rgba[j+3]=out.channels===4?out.data[i+3]:255}oc.putImageData(new ImageData(rgba,out.width,out.height),0,0);const newImg=new Image();newImg.onload=()=>{original=newImg;width=out.width;height=out.height;preview.width=paint.width=width;preview.height=paint.height=height;mask=document.createElement('canvas');mask.width=width;mask.height=height;maskCtx=mask.getContext('2d');maskCtx.fillStyle='#fff';maskCtx.fillRect(0,0,width,height);settings.keepBg=true;render();progress('upProgress',100);setStatus('upStatus',`Hoàn tất AI upscale: ${width} × ${height}px. Ảnh đã được thay bằng kết quả 2×.`,'good');$('imageInfo').textContent=`${width} × ${height}px`;upscaleBusy=false;$('upscaleBtn').disabled=false};newImg.src=outCanvas.toDataURL('image/png')}catch(e){console.error(e);setStatus('upStatus','Không chạy được AI upscale. Thử Chrome/Edge mới, giảm kích thước ảnh hoặc kiểm tra Internet. '+(e.message||e),'bad');upscaleBusy=false;$('upscaleBtn').disabled=false}};
+window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();restoreHistory()}});
+updateLabels();enable();
+</script>
+</body>
+</html>

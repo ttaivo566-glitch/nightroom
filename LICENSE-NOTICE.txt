@@ -1,0 +1,1 @@
+This project integrates third-party components. See README.md for their respective licenses. The IMG.LY background-removal package is AGPL-3.0; Transformers.js is Apache-2.0. The application source in this archive is provided as a starter implementation; third-party licenses remain applicable.
