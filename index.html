@@ -42,9 +42,13 @@ button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--li
     <div class="section active" id="sec-cut">
      <button class="primary" id="aiBtn" style="width:100%">✦ Tách nền bằng AI</button>
      <div class="status" id="aiStatus">AI sẽ tải mô hình lần đầu (cần Internet). Ảnh không được tải lên máy chủ.</div><div class="progress"><i id="aiProgress"></i></div>
-     <div class="field"><label>Chế độ cọ</label><select id="brushMode"><option value="erase">Xóa nền (đỏ)</option><option value="restore">Giữ lại chủ thể (xanh)</option></select></div>
+     <div class="field"><label>Chế độ cọ</label><select id="brushMode"><option value="erase">Xóa nền (đỏ)</option><option value="restore">Giữ lại chủ thể (xanh)</option><option value="sam">SAM: nhấp chọn vùng</option></select></div>
      <div class="field"><label>Kích thước cọ <output id="brushVal">36 px</output></label><input id="brushSize" type="range" min="5" max="180" value="36"></div>
      <div class="btnrow"><button id="clearMaskBtn">Xóa toàn bộ mask</button><button id="invertMaskBtn">Đảo mask</button></div>
+     <div class="btnrow" style="margin-top:8px"><button id="samLoadBtn">✦ Nạp mô hình SAM</button><button id="samClearBtn">Xóa điểm SAM</button></div>
+     <div class="status" id="samStatus">SAM chạy cục bộ bằng ONNX/WebGPU. Mô hình tải lần đầu khoảng 100 MB trở lên.</div>
+     <div class="toolhint">Chọn “SAM: nhấp chọn vùng”, nhấp trái vào chủ thể để đánh dấu vùng giữ; nhấp phải vào nền để đánh dấu vùng loại trừ. Sau đó chọn Áp dụng điểm SAM.</div>
+     <button id="samApplyBtn" style="width:100%;margin-bottom:8px" disabled>Áp dụng điểm SAM</button>
      <div class="toolhint">AI không chính xác? Dùng cọ đỏ tô vùng cần bỏ, cọ xanh phục hồi vùng cần giữ. Phóng to trình duyệt để chỉnh chi tiết tóc và viền.</div>
      <div class="note">Mask là mặt nạ alpha thủ công, không cần kết nối dịch vụ bên ngoài. Nút đảo mask hữu ích khi AI nhận nhầm chủ thể/nền.</div>
     </div>
@@ -64,7 +68,7 @@ button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--li
      <div class="field"><label>Hướng sáng <output id="lightDirVal">35°</output></label><input id="lightDir" type="range" min="0" max="360" value="35"></div>
      <div class="field"><label>Độ mềm <output id="softVal">70%</output></label><input id="lightSoft" type="range" min="5" max="100" value="70"></div>
      <div class="field"><label>Nhiệt độ màu <output id="tempVal">0</output></label><input id="lightTemp" type="range" min="-40" max="40" value="0"></div>
-     <div class="note">Đây là mô phỏng ánh sáng hậu kỳ bằng lớp phủ Canvas, không phải tái chiếu sáng AI vật lý. Có thể bật/tắt để so sánh.</div>
+     <div class="note">Đây là mô phỏng ánh sáng hậu kỳ bằng Canvas, không phải IC-Light diffusion. IC-Light gốc chưa có bản ONNX/WebGPU gọn và ổn định để nhúng trực tiếp vào GitHub Pages.</div>
     </div>
     <div class="section" id="sec-detail">
      <button class="primary" id="upscaleBtn" style="width:100%">✦ AI Super Resolution 2×</button>
@@ -84,18 +88,19 @@ button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--li
    </section>
   </aside>
  </main>
- <div class="footer"><span>Studio AI · xử lý tại thiết bị · không lưu ảnh lên máy chủ</span><span>AI model: IMG.LY Background Removal · Swin2SR / Transformers.js</span></div>
+ <div class="footer"><span>Studio AI · xử lý tại thiết bị · không lưu ảnh lên máy chủ</span><span>AI model: IMG.LY Background Removal (CDN dự phòng) · Swin2SR / Transformers.js</span></div>
  <input id="fileInput" type="file" accept="image/*" hidden>
 </div>
 <script type="module">
 const $=id=>document.getElementById(id);
 const preview=$('preview'), pctx=preview.getContext('2d'), paint=$('paint'), xctx=paint.getContext('2d');
-let original=null, originalBitmap=null, sourceBlob=null, mask=null, maskCtx=null, width=0,height=0, aiBlob=null, history=[], brushDown=false, compare=false, aiBusy=false, upscaleBusy=false, upscaler=null;
+let original=null, originalBitmap=null, mask=null, maskCtx=null, width=0,height=0, aiBlob=null, history=[], brushDown=false, compare=false, aiBusy=false, upscaleBusy=false, upscaler=null;
 let settings={bg:'#dce6f4',bg2:'#657fa5',bgMode:'solid',blur:0,light:30,dir:35,soft:70,temp:0,sharp:0,denoise:0,keepBg:false,lightPreset:'soft'};
+let samModel=null, samProcessor=null, samImage=null, samPoints=[], samLabels=[], samBusy=false;
 function setStatus(id,msg,type=''){const el=$(id);el.textContent=msg;el.className='status '+type}
 function progress(id,v){$(id).style.width=Math.max(0,Math.min(100,v))+'%'}
 function enable(){['aiBtn','resetBtn','exportBtn','compareBtn','clearMaskBtn','invertMaskBtn','fitBtn','upscaleBtn'].forEach(id=>$(id).disabled=!original)}
-function loadImage(file){if(!file||!file.type.startsWith('image/'))return;sourceBlob=file;const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{original=img;originalBitmap=null;width=img.naturalWidth;height=img.naturalHeight;const max=2600,scale=Math.min(1,max/Math.max(width,height));if(scale<1){width=Math.round(width*scale);height=Math.round(height*scale)};preview.width=paint.width=width;preview.height=paint.height=height;mask=document.createElement('canvas');mask.width=width;mask.height=height;maskCtx=mask.getContext('2d',{willReadFrequently:true});maskCtx.fillStyle='#fff';maskCtx.fillRect(0,0,width,height);aiBlob=null;history=[];$('empty').classList.add('hidden');$('canvasWrap').style.display='block';$('imageInfo').textContent=`${img.naturalWidth} × ${img.naturalHeight}px`;$('stageStatus').textContent='Ảnh đã tải · chưa tách nền';$('showOriginalBg').checked=true;settings.keepBg=true;render();enable();URL.revokeObjectURL(url)};img.onerror=()=>alert('Không thể mở ảnh này.');img.src=url}
+function loadImage(file){if(!file||!file.type.startsWith('image/'))return;const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{original=img;originalBitmap=null;width=img.naturalWidth;height=img.naturalHeight;const max=2600,scale=Math.min(1,max/Math.max(width,height));if(scale<1){width=Math.round(width*scale);height=Math.round(height*scale)};preview.width=paint.width=width;preview.height=paint.height=height;mask=document.createElement('canvas');mask.width=width;mask.height=height;maskCtx=mask.getContext('2d',{willReadFrequently:true});maskCtx.fillStyle='#fff';maskCtx.fillRect(0,0,width,height);aiBlob=null;history=[];samImage=null;samPoints=[];samLabels=[];samModel=null;samProcessor=null;$('empty').classList.add('hidden');$('canvasWrap').style.display='block';$('imageInfo').textContent=`${img.naturalWidth} × ${img.naturalHeight}px`;$('stageStatus').textContent='Ảnh đã tải · chưa tách nền';$('showOriginalBg').checked=true;settings.keepBg=true;render();enable();URL.revokeObjectURL(url)};img.onerror=()=>alert('Không thể mở ảnh này.');img.src=url}
 function snapshot(){if(!mask)return;try{history.push({mask:maskCtx.getImageData(0,0,width,height),settings:{...settings}});if(history.length>15)history.shift();$('undoBtn').disabled=false}catch(e){}}
 function restoreHistory(){const s=history.pop();if(!s)return;maskCtx.putImageData(s.mask,0,0);settings={...s.settings};syncControls();render();$('undoBtn').disabled=!history.length}
 function syncControls(){ $('bgColor').value=settings.bg;$('bgColor2').value=settings.bg2;$('bgMode').value=settings.bgMode;$('bgBlur').value=settings.blur;$('lightPower').value=settings.light;$('lightDir').value=settings.dir;$('lightSoft').value=settings.soft;$('lightTemp').value=settings.temp;$('sharpness').value=settings.sharp;$('denoise').value=settings.denoise;$('showOriginalBg').checked=settings.keepBg;updateLabels()}
@@ -116,10 +121,98 @@ function render(){if(!original)return;const fg=document.createElement('canvas');
  $('stageStatus').textContent=settings.keepBg?'Ảnh gốc + hiệu ứng':'Đang xem ảnh đã tách nền';
 }
 function updateMaskFromBlob(blob){return new Promise((resolve,reject)=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=width;c.height=height;const cctx=c.getContext('2d');cctx.drawImage(im,0,0,width,height);const rgba=cctx.getImageData(0,0,width,height),out=maskCtx.createImageData(width,height);for(let i=0;i<rgba.data.length;i+=4){const a=rgba.data[i+3];out.data[i]=out.data[i+1]=out.data[i+2]=out.data[i+3]=a}maskCtx.putImageData(out,0,0);URL.revokeObjectURL(u);resolve()};im.onerror=reject;im.src=u})}
-$('aiBtn').onclick=async()=>{if(!original||aiBusy)return;aiBusy=true;$('aiBtn').disabled=true;setStatus('aiStatus','Đang tải mô hình AI lần đầu…');progress('aiProgress',5);try{const mod=await import('https://esm.sh/@imgly/background-removal@1.7.0?bundle');const remove=mod.default||mod;progress('aiProgress',20);const blob=await remove(sourceBlob,{model:'isnet_fp16',device:(navigator.gpu?'gpu':'cpu'),progress:(key,current,total)=>{if(total)progress('aiProgress',20+Math.round(current/total*65));setStatus('aiStatus','Đang xử lý: '+key)}});snapshot();await updateMaskFromBlob(blob);aiBlob=blob;settings.keepBg=false;$('showOriginalBg').checked=false;render();progress('aiProgress',100);setStatus('aiStatus','Đã tách nền bằng AI. Có thể dùng cọ để sửa vùng biên.','good');$('stageStatus').textContent='AI tách nền hoàn tất'}catch(e){console.error(e);setStatus('aiStatus','Không tải/chạy được mô hình AI. Kiểm tra Internet, sau đó thử lại hoặc dùng cọ thủ công. Chi tiết: '+(e.message||e),'bad')}finally{aiBusy=false;$('aiBtn').disabled=false}};
+
+async function loadSam(){
+ if(samModel&&samProcessor){setStatus('samStatus','SAM đã được nạp.','good');return}
+ setStatus('samStatus','Đang tải mô hình SAM; lần đầu có thể mất vài phút…');
+ try{
+  const lib=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2');
+  const opts={dtype:'q8'}; if(navigator.gpu)opts.device='webgpu';
+  samModel=await lib.SamModel.from_pretrained('Xenova/sam-vit-base',opts);
+  samProcessor=await lib.AutoProcessor.from_pretrained('Xenova/sam-vit-base');
+  const blob=await new Promise(resolve=>preview.toBlob(resolve,'image/png'));
+  const url=URL.createObjectURL(blob);
+  samImage=await lib.RawImage.read(url); URL.revokeObjectURL(url);
+  setStatus('samStatus','SAM đã sẵn sàng. Chọn chế độ SAM rồi nhấp vào ảnh.','good');
+ }catch(err){console.error(err);samModel=null;samProcessor=null;setStatus('samStatus','Không tải được SAM. Kiểm tra Internet, WebGPU và bộ nhớ máy. '+(err.message||err),'bad')}
+}
+$('samLoadBtn').onclick=loadSam;
+$('samClearBtn').onclick=()=>{samPoints=[];samLabels=[];$('samApplyBtn').disabled=true;setStatus('samStatus','Đã xóa các điểm chọn.')};
+$('samApplyBtn').onclick=async()=>{
+ if(!samModel||!samProcessor||!samPoints.length||samBusy)return;
+ samBusy=true;$('samApplyBtn').disabled=true;setStatus('samStatus','SAM đang phân tích các điểm đã chọn…');
+ try{
+  const inputs=await samProcessor(samImage,{input_points:[samPoints],input_labels:[samLabels]});
+  const outputs=await samModel(inputs);
+  const masks=await samProcessor.post_process_masks(outputs.pred_masks,inputs.original_sizes,inputs.reshaped_input_sizes);
+  const scores=outputs.iou_scores.data;let best=0,bestScore=-Infinity;
+  for(let i=0;i<scores.length;i++)if(scores[i]>bestScore){bestScore=scores[i];best=i}
+  const tensor=masks[0],dims=tensor.dims,mh=dims[dims.length-2],mw=dims[dims.length-1],plane=mh*mw,data=tensor.data,offset=best*plane;
+  snapshot();const out=maskCtx.createImageData(width,height);
+  for(let y=0;y<height;y++){const sy=Math.min(mh-1,Math.floor(y*mh/height));for(let x=0;x<width;x++){const sx=Math.min(mw-1,Math.floor(x*mw/width));const v=data[offset+sy*mw+sx];const a=(v===true||v===1||v>0)?255:0;const k=(y*width+x)*4;out.data[k]=out.data[k+1]=out.data[k+2]=out.data[k+3]=a}}
+  maskCtx.putImageData(out,0,0);settings.keepBg=false;$('showOriginalBg').checked=false;render();
+  setStatus('samStatus',`Đã tạo vùng chọn SAM (điểm tin cậy ${Number(bestScore).toFixed(3)}). Có thể tinh chỉnh bằng cọ.`,'good');
+ }catch(err){console.error(err);setStatus('samStatus','SAM không xử lý được ảnh: '+(err.message||err),'bad')}
+ finally{samBusy=false;$('samApplyBtn').disabled=!samPoints.length}
+};
+
+$('aiBtn').onclick=async()=>{
+ if(!original||aiBusy)return;
+ aiBusy=true;$('aiBtn').disabled=true;progress('aiProgress',2);
+ setStatus('aiStatus','Đang kết nối thư viện AI…');
+ try{
+  let mod,loadErrors=[];
+  // CDN dự phòng: nếu một CDN không phản hồi, thử nguồn còn lại.
+  for(const src of [
+   'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm',
+   'https://esm.sh/@imgly/background-removal@1.7.0?bundle'
+  ]){
+   try{mod=await import(src);break}catch(err){loadErrors.push(src+': '+(err.message||err));console.warn('Không tải được thư viện từ',src,err)}
+  }
+  if(!mod)throw new Error('Không tải được thư viện từ các CDN. '+loadErrors.join(' | '));
+  const remove=mod.default||mod.removeBackground||mod;
+  if(typeof remove!=='function')throw new Error('Thư viện AI tải về không đúng định dạng.');
+  progress('aiProgress',12);setStatus('aiStatus','Đang tải mô hình AI (lần đầu có thể mất vài phút)…');
+  const common={
+   model:'isnet_quint8',
+   publicPath:'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/',
+   debug:true,
+   progress:(key,current,total)=>{
+    if(total)progress('aiProgress',12+Math.round(current/total*75));
+    setStatus('aiStatus',`Đang tải/xử lý mô hình: ${key} (${current}/${total||'?'})`);
+   }
+  };
+  let blob;
+  // Ưu tiên GPU; nếu WebGPU hoặc driver không tương thích thì tự thử CPU.
+  try{
+   const useGpu=!!navigator.gpu;
+   blob=await remove(original.src,{...common,device:useGpu?'gpu':'cpu'});
+  }catch(gpuErr){
+   console.warn('GPU không chạy được, chuyển sang CPU:',gpuErr);
+   setStatus('aiStatus','GPU không tương thích; đang chuyển sang CPU, vui lòng chờ…');
+   progress('aiProgress',18);
+   blob=await remove(original.src,{...common,device:'cpu'});
+  }
+  if(!(blob instanceof Blob)||!blob.size)throw new Error('AI không trả về ảnh kết quả hợp lệ.');
+  snapshot();await updateMaskFromBlob(blob);aiBlob=blob;settings.keepBg=false;$('showOriginalBg').checked=false;render();
+  progress('aiProgress',100);setStatus('aiStatus','Đã tách nền bằng AI. Có thể dùng cọ để sửa vùng biên.','good');$('stageStatus').textContent='AI tách nền hoàn tất';
+ }catch(e){
+  console.error(e);
+  setStatus('aiStatus','Không kết nối/tải được thư viện hoặc mô hình AI. Hãy thử mạng khác, tắt chặn CDN nếu có, rồi tải lại trang. Ảnh không được gửi lên máy chủ. Chi tiết: '+(e.message||e),'bad');
+ }finally{aiBusy=false;$('aiBtn').disabled=false}
+};
 function point(e){const r=paint.getBoundingClientRect();return{x:(e.clientX-r.left)*width/r.width,y:(e.clientY-r.top)*height/r.height}}
 function brush(e){if(!brushDown)return;const p=point(e),mode=$('brushMode').value;maskCtx.save();maskCtx.globalCompositeOperation='source-over';maskCtx.strokeStyle=mode==='erase'?'rgba(0,0,0,0)':'rgba(255,255,255,1)';maskCtx.fillStyle=mode==='erase'?'rgba(0,0,0,0)':'#fff';maskCtx.lineWidth=+$('brushSize').value*width/paint.getBoundingClientRect().width;maskCtx.lineCap='round';maskCtx.lineJoin='round';if(mode==='erase')maskCtx.globalCompositeOperation='destination-out';else maskCtx.globalCompositeOperation='source-over';if(!brush.last){maskCtx.beginPath();maskCtx.arc(p.x,p.y,maskCtx.lineWidth/2,0,Math.PI*2);maskCtx.fill()}else{maskCtx.beginPath();maskCtx.moveTo(brush.last.x,brush.last.y);maskCtx.lineTo(p.x,p.y);maskCtx.stroke()}maskCtx.restore();brush.last=p;render()}
-paint.addEventListener('pointerdown',e=>{if(!original||settings.keepBg)return;snapshot();brushDown=true;brush.last=null;paint.setPointerCapture(e.pointerId);brush(e)});
+paint.addEventListener('pointerdown',e=>{
+ if(!original||settings.keepBg)return;
+ if($('brushMode').value==='sam'){
+  e.preventDefault();if(!samModel){setStatus('samStatus','Hãy nạp mô hình SAM trước.');return}
+  const pt=point(e),negative=e.button===2;samPoints.push([Math.round(pt.x),Math.round(pt.y)]);samLabels.push(negative?0:1);
+  $('samApplyBtn').disabled=false;setStatus('samStatus',`Đã thêm ${samPoints.length} điểm: ${samLabels.filter(v=>v===1).length} điểm giữ, ${samLabels.filter(v=>v===0).length} điểm nền.`);return;
+ }
+ if(e.button!==0)return;snapshot();brushDown=true;brush.last=null;paint.setPointerCapture(e.pointerId);brush(e)
+});
+paint.addEventListener('contextmenu',e=>{if($('brushMode').value==='sam')e.preventDefault()});
 paint.addEventListener('pointermove',e=>{if(brushDown)brush(e)});
 paint.addEventListener('pointerup',()=>{brushDown=false;brush.last=null});
 paint.addEventListener('pointercancel',()=>{brushDown=false;brush.last=null});
