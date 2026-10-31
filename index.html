@@ -18,7 +18,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 #st{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #msg{position:absolute;left:8px;bottom:8px;right:8px;background:#000b;color:#fff;padding:6px 10px;border-radius:6px;font-size:13px;display:none}
 #side{background:var(--p);border-top:1px solid var(--b);max-height:44dvh;overflow:auto;padding:8px}
-#tabs{display:flex;gap:4px;margin-bottom:8px}#tabs button{flex:1;padding:7px 2px}
+#tabs{display:flex;gap:4px;margin-bottom:8px}#tabs button{flex:1;padding:7px 1px;font-size:12.5px}
 .pn{display:none}.pn.show{display:block}
 label{display:flex;align-items:center;gap:8px;margin:5px 0}label span{width:104px;flex:none;color:var(--m)}
 input[type=range]{flex:1;accent-color:var(--a)}
@@ -40,8 +40,12 @@ p.h{color:var(--m);margin:6px 0;font-size:12.5px}
 <label class="btn" style="margin:0">Chọn ảnh<input id="bgf" type="file" accept="image/*" hidden></label></div>
 <div class="row" id="sws"></div>
 <div id="s-bg"></div>
-<p class="h">Tách nền sai? Khoanh vùng bên dưới (ảnh chuyển sang chế độ xem vùng đỏ = đã xóa).</p>
-<div class="row"><button id="lasso">Khoanh vùng</button><select id="lmode"><option value="ai">Nhận dạng lại bằng AI</option><option value="keep">Giữ lại vùng này</option><option value="erase">Xóa vùng này</option></select><button id="redo">Tách nền lại cả ảnh</button></div>
+<p class="h">Sửa tách nền: chọn công cụ, ảnh sẽ hiện vùng đỏ = vùng đã xóa. Một ngón để tô, hai ngón để thu phóng và dời ảnh.</p>
+<div class="row" id="tools"></div>
+<label><span>Cỡ cọ</span><input type="range" id="bsz" min="8" max="240" value="56"></label>
+<label><span>Độ mềm mép cọ</span><input type="range" id="bsf" min="0" max="100" value="30"></label>
+<div class="row"><select id="lmode"><option value="ai">Khoanh: AI nhận dạng lại</option><option value="keep">Khoanh: giữ lại</option><option value="erase">Khoanh: xóa</option></select></div>
+<div class="row"><select id="mq"><option value="isnet_quint8">AI tách nền: nhanh</option><option value="isnet_fp16" selected>AI tách nền: cân bằng</option><option value="isnet">AI tách nền: chính xác (nặng)</option></select><button id="redo">Tách nền lại cả ảnh</button></div>
 </div>
 
 <div class="pn" id="p-li"><p class="h">Đèn studio giúp cứu ảnh cũ, chụp lại, thiếu sáng hoặc ngả màu.</p>
@@ -52,12 +56,19 @@ p.h{color:var(--m);margin:6px 0;font-size:12.5px}
 <div class="pn" id="p-be"><p class="h">Nhận diện 478 điểm trên mặt để làm đẹp riêng từng vùng: da, mắt, môi, răng.</p>
 <div id="s-be"></div><div id="fstat" class="h"></div></div>
 
-<div class="pn" id="p-ai"><p class="h">Tăng độ phân giải ×2 bằng mô hình Swin2SR chạy ngay trên máy. Ảnh lớn có thể mất vài phút, vui lòng chờ.</p>
-<div class="row"><select id="mdl"><option value="Xenova/swin2SR-lightweight-x2-700k">Nhanh (nhẹ)</option><option value="Xenova/swin2SR-classical-sr-x2-64">Chất lượng cao (chậm)</option></select><button id="up" class="pri">Tăng độ phân giải ×2</button></div>
+<div class="pn" id="p-ns"><p class="h">Làm nét theo độ sáng nên không bị viền màu. Bật "Xem vùng làm nét" để thấy chỗ đang được làm nét (màu xanh lá).</p>
+<div class="row"><button id="shs" class="pri">Gợi ý cho ảnh mờ</button><select id="shreg"><option value="all">Toàn ảnh</option><option value="subj">Chỉ người</option><option value="face">Chỉ khuôn mặt</option></select></div>
+<div id="s-ns"></div>
+<label><span></span><input type="checkbox" id="shv" checked>&nbsp;Xem vùng làm nét</label></div>
+
+<div class="pn" id="p-ai"><p class="h"><b>Tăng độ phân giải thủ công</b> (nội suy, nhanh, không thêm chi tiết mới)</p>
+<div class="row"><select id="imt"><option value="lz">Lanczos (sắc)</option><option value="cv">Bicubic (mượt)</option></select><select id="msc"></select><button id="upm">Tăng thủ công</button></div>
+<p class="h"><b>Tăng độ phân giải bằng AI</b> (Swin2SR chạy trên máy, có thể mất vài phút, vui lòng chờ)</p>
+<div class="row"><select id="mdl"></select><select id="asc"></select><button id="up" class="pri">Tăng bằng AI</button></div>
 <div id="usz" class="h"></div></div>
 
 <div class="pn" id="p-cr"><div class="row"><select id="ratio">
-<option value="0">Giữ tỉ lệ ảnh</option><option value="1">1:1</option><option value="0.75" selected>3:4 (ảnh thẻ)</option><option value="0.6667">2:3 (4×6)</option><option value="0.8">4:5</option><option value="1.7778">16:9</option><option value="0.5625">9:16</option></select></div>
+<option value="0">Giữ tỉ lệ ảnh</option><option value="1">1:1</option><option value="0.75" selected>3:4 (ảnh thẻ)</option><option value="0.6667">2:3 (4×6)</option><option value="0.8">4:5</option><option value="1.7778">16:9</option><option value="0.5625">9:16</option></select><button id="af">Tự căn khuôn mặt</button></div>
 <label><span>Phóng to / thu nhỏ</span><input type="range" id="zoom" min="0.3" max="6" step="0.01" value="1"></label>
 <label><span>Kích thước khung</span><input type="range" id="fsz" min="0.3" max="1" step="0.01" value="0.9"></label>
 <label><span>Cạnh dài khi tải</span><select id="osz" style="flex:1"><option value="0">Giữ nguyên</option><option value="1024">1024 px</option><option value="2048">2048 px</option><option value="4096">4096 px</option></select></label>
@@ -68,46 +79,58 @@ p.h{color:var(--m);margin:6px 0;font-size:12.5px}
 <script type="module">
 const $=s=>document.querySelector(s),mk=(w,h)=>Object.assign(document.createElement('canvas'),{width:w,height:h}),cl=(v,a=0,b=255)=>v<a?a:v>b?b:v;
 const CAP=1280,P={},st=$('#st'),X=st.getContext('2d'),wrap=$('#wrap');
-let W=0,H=0,src,base,mask,subj,compC,ovC,faces=null,pm=null,bgImg=null,tab='bg',lasso=false,pts=[],raf=0,dpr=Math.min(2,devicePixelRatio||1);
+let W=0,H=0,src,base,mask,subj,compC,ovC,faces=null,pm=null,bgImg=null,tab='bg',tool='pan',pts=[],hist=[],A=null,shMap=null,cur=null,raf=0,dpr=Math.min(2,devicePixelRatio||1);
 let V={s:1,x:0,y:0};
 const cfg=[['feather','Làm mềm viền',0,12,2,'bg'],['shift','Co (−) / giãn (+) viền',-10,10,0,'bg'],
 ['exp','Độ sáng',-100,100,0,'li'],['con','Tương phản',-100,100,0,'li'],['sh','Nâng vùng tối',0,100,0,'li'],['warm','Độ ấm màu',-100,100,0,'li'],['sat','Bão hòa',-100,100,0,'li'],['key','Đèn chính',0,100,0,'li'],['fill','Đèn bù',0,100,0,'li'],
-['smooth','Mịn da',0,100,0,'be'],['skin','Sáng da',0,100,0,'be'],['eye','Mắt sáng',0,100,0,'be'],['lip','Môi hồng',0,100,0,'be'],['teeth','Răng trắng',0,100,0,'be']];
+['smooth','Mịn da',0,100,0,'be'],['skin','Sáng da',0,100,0,'be'],['eye','Mắt sáng',0,100,0,'be'],['lip','Môi hồng',0,100,0,'be'],['teeth','Răng trắng',0,100,0,'be'],
+['sharp','Lượng làm nét',0,200,0,'ns'],['shr','Bán kính',1,6,2,'ns'],['sth','Bỏ qua nhiễu nhỏ',0,30,3,'ns'],['dn','Khử nhiễu',0,100,0,'ns']];
 for(const [k,n,a,b,d,p] of cfg){P[k]=d;const l=document.createElement('label');l.innerHTML=`<span>${n}</span><input type="range" id="r_${k}" min="${a}" max="${b}" value="${d}">`;$('#s-'+p).append(l);
- l.querySelector('input').oninput=e=>{P[k]=+e.target.value;if(p=='be')needFaces();dirty()}}
-const tabs=[['bg','Nền'],['li','Ánh sáng'],['be','Làm đẹp'],['ai','AI'],['cr','Cắt']];
+ l.querySelector('input').oninput=e=>{P[k]=+e.target.value;if(p=='be'||p=='ns')needFaces();dirty()}}
+const tabs=[['bg','Nền'],['li','Ánh sáng'],['be','Đẹp'],['ns','Nét'],['ai','AI'],['cr','Cắt']];
 for(const [k,n] of tabs){const b=document.createElement('button');b.textContent=n;b.id='t_'+k;b.onclick=()=>setTab(k);$('#tabs').append(b)}
-function setTab(k){tab=k;if(k!='bg'){lasso=false;$('#lasso').classList.remove('on')}
+function setTab(k){tab=k;if(k!='bg')setTool('pan');
  tabs.forEach(([t])=>{$('#p-'+t).classList.toggle('show',t==k);$('#t_'+t).classList.toggle('on',t==k)});
- if(k=='be')needFaces();if(k=='cr')$('#usec').checked=true;fit();draw()}
+ if(k=='be'||k=='ns')needFaces();if(k=='cr')$('#usec').checked=true;fit();draw()}
+const TL=[['pan','Di chuyển'],['erase','Cọ xóa'],['keep','Cọ giữ'],['lasso','Khoanh vùng']],brush=()=>tool=='erase'||tool=='keep',mview=()=>tool!='pan';
+for(const [k,n] of TL){const b=document.createElement('button');b.textContent=n;b.id='tl_'+k;b.onclick=()=>setTool(k);$('#tools').append(b)}
+{const b=document.createElement('button');b.textContent='Hoàn tác';b.onclick=()=>{if(hist.length){mask=hist.pop();refreshOv();dirty()}};$('#tools').append(b)}
+function setTool(k){tool=k;pts=[];TL.forEach(([t])=>$('#tl_'+t).classList.toggle('on',t==k));st.style.cursor=brush()?'none':'default';if(W)draw()}
 const sw=[['#ffffff','Trắng'],['#3f7fd2','Xanh'],['#c8102e','Đỏ'],['#d9d9d9','Xám']];
 sw.forEach(([c,n])=>{const b=document.createElement('button');b.className='sw';b.title=n;b.style.background=c;b.onclick=()=>{$('#col').value=c;dirty()};$('#sws').append(b)});
 const msg=t=>{const m=$('#msg');m.style.display=t?'block':'none';m.textContent=t||''};
 function dirty(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(W){render();draw()}})}
-['bgt','col','kpos'].forEach(i=>$('#'+i).oninput=dirty);
+['bgt','col','kpos','shv'].forEach(i=>$('#'+i).oninput=dirty);
+$('#shreg').oninput=()=>{needFaces();dirty()};$('#bsz').oninput=()=>draw();
+$('#shs').onclick=()=>{set('sharp',90);set('shr',2);set('sth',4);set('dn',20);dirty()};
 
 /* ---------- Tải ảnh ---------- */
 $('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
  const bm=await createImageBitmap(f,{imageOrientation:'from-image'});const k=Math.min(1,CAP/Math.max(bm.width,bm.height));
  W=Math.round(bm.width*k);H=Math.round(bm.height*k);src=mk(W,H);src.getContext('2d').drawImage(bm,0,0,W,H);
  setBase();mask=new Uint8Array(W*H).fill(255);faces=null;pm=null;fit();render();draw();await autoSeg();e.target.value=''};
-function setBase(){base=src.getContext('2d').getImageData(0,0,W,H);$('#usz').textContent=`Kích thước hiện tại: ${W}×${H}px`}
+function setBase(){base=src.getContext('2d').getImageData(0,0,W,H);info()}
 $('#bgf').onchange=async e=>{const f=e.target.files[0];if(!f)return;bgImg=await createImageBitmap(f);$('#bgt').value='img';dirty()};
 
 /* ---------- Tách nền ---------- */
 async function seg(cv){msg('Đang tải mô hình tách nền (lần đầu hơi lâu)…');
  const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
- const out=await removeBackground(blob,{progress:(k,c,t)=>msg(`Đang xử lý ${k.replace(/^.*:/,'')} ${t?Math.round(c/t*100):''}%`)});
+ const out=await removeBackground(blob,{model:$('#mq').value,progress:(k,c,t)=>msg(`Đang xử lý ${k.replace(/^.*:/,'')} ${t?Math.round(c/t*100):''}%`)});
  const bm=await createImageBitmap(out),c=mk(cv.width,cv.height);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
  const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data,a=new Uint8Array(c.width*c.height);for(let i=0;i<a.length;i++)a[i]=d[i*4+3];return a}
-async function autoSeg(){try{mask=await seg(src);msg('');refreshOv();dirty()}catch(e){msg('Không tách được nền: '+e.message);console.error(e)}}
+async function autoSeg(){try{const m=await seg(src);pushHist();mask=m;msg('');refreshOv();dirty()}catch(e){msg('Không tách được nền: '+e.message);console.error(e)}}
 $('#redo').onclick=()=>W&&autoSeg();
-$('#lasso').onclick=()=>{if(!W)return;lasso=!lasso;$('#lasso').classList.toggle('on',lasso);pts=[];fit();draw()};
-function refreshOv(){ovC=mk(W,H);const x=ovC.getContext('2d'),id=x.createImageData(W,H);for(let i=0;i<W*H;i++){id.data[i*4]=235;id.data[i*4+1]=40;id.data[i*4+2]=40;id.data[i*4+3]=(255-mask[i])*.6}x.putImageData(id,0,0)}
+function refreshOv(){ovC=mk(W,H);ovRect(0,0,W,H)}
+function ovRect(x0,y0,x1,y1){const w=x1-x0,h=y1-y0;if(w<1||h<1)return;const q=ovC.getContext('2d'),id=q.createImageData(w,h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const o=(y*w+x)*4;id.data[o]=235;id.data[o+1]=40;id.data[o+2]=40;id.data[o+3]=(255-mask[(y0+y)*W+x0+x])*.6}q.putImageData(id,x0,y0)}
+function paint(a,b){const r=Math.max(1,$('#bsz').value/2/V.s),h=$('#bsf').value/100,er=tool=='erase',dx=b[0]-a[0],dy=b[1]-a[1],n=Math.max(1,Math.ceil(Math.hypot(dx,dy)/(r/3)));let X0=W,Y0=H,X1=0,Y1=0;
+ for(let k=0;k<=n;k++){const cx=a[0]+dx*k/n,cy=a[1]+dy*k/n,x0=Math.max(0,Math.floor(cx-r)),x1=Math.min(W-1,Math.ceil(cx+r)),y0=Math.max(0,Math.floor(cy-r)),y1=Math.min(H-1,Math.ceil(cy+r));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const q=Math.hypot(x-cx,y-cy);if(q>r)continue;const c=h>0?cl((r-q)/(r*h),0,1):1,i=y*W+x;mask[i]=er?mask[i]*(1-c):Math.max(mask[i],255*c)}
+  X0=Math.min(X0,x0);Y0=Math.min(Y0,y0);X1=Math.max(X1,x1);Y1=Math.max(Y1,y1)}
+ ovRect(X0,Y0,X1+1,Y1+1)}
 async function applyLasso(){if(pts.length<3)return;const m=$('#lmode').value;
  const pc=mk(W,H),px=pc.getContext('2d');px.fillStyle='#fff';px.beginPath();pts.forEach((p,i)=>i?px.lineTo(p[0],p[1]):px.moveTo(p[0],p[1]));px.fill();
- const ins=px.getImageData(0,0,W,H).data;let n=mask.slice();
+ const ins=px.getImageData(0,0,W,H).data;pushHist();let n=mask.slice();
  if(m=='ai'){const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),pd=40;
   const x0=Math.max(0,Math.floor(Math.min(...xs)-pd)),y0=Math.max(0,Math.floor(Math.min(...ys)-pd)),x1=Math.min(W,Math.ceil(Math.max(...xs)+pd)),y1=Math.min(H,Math.ceil(Math.max(...ys)+pd));
   const c=mk(x1-x0,y1-y0);c.getContext('2d').drawImage(src,x0,y0,c.width,c.height,0,0,c.width,c.height);
@@ -127,7 +150,7 @@ const IDX={oval:[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,
 eyeL:[33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246],eyeR:[362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398],
 lips:[61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185],mouth:[78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191]};
 let fbusy=false;
-async function needFaces(){if(!W||faces||fbusy||!(P.smooth||P.skin||P.eye||P.lip||P.teeth))return;fbusy=true;
+async function needFaces(f){if(!W||faces||fbusy||!(f||P.smooth||P.skin||P.eye||P.lip||P.teeth||$('#shreg').value=='face'))return;fbusy=true;
  try{msg('Đang nhận diện khuôn mặt…');const T=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
   const fs=await T.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const fl=await T.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'},runningMode:'IMAGE',numFaces:1});
@@ -139,7 +162,7 @@ function buildPM(){const o=poly(IDX.oval),l=poly(IDX.eyeL),r=poly(IDX.eyeR),li=p
  for(let i=0;i<sk.length;i++){ey[i]=Math.min(1,l[i]+r[i]);sk[i]=o[i]*(1-ey[i])*(1-li[i])}pm={sk,ey,lip:li,mo}}
 
 /* ---------- Ánh sáng + làm đẹp + dựng ảnh ---------- */
-function subject(){const d=new Uint8ClampedArray(base.data),A=alpha(),n=W*H;
+function subject(){const d=new Uint8ClampedArray(base.data),n=W*H;A=alpha();
  if(pm&&(P.smooth||P.skin||P.eye||P.lip||P.teeth)){const r=Math.max(2,W/220|0),ch=[0,1,2].map(c=>{const a=new Float32Array(n);if(P.smooth)for(let i=0;i<n;i++)a[i]=d[i*4+c];return P.smooth?box(a,W,H,r):a});
   const sm=P.smooth/100*.85,br=P.skin/100*.22,ey=P.eye/100,lp=P.lip/100,te=P.teeth/100;
   for(let i=0;i<n;i++){const s=pm.sk[i],e=pm.ey[i],l=pm.lip[i],t=pm.mo[i]*(1-l*.0),o=i*4;let R=d[o],G=d[o+1],B=d[o+2];
@@ -163,7 +186,18 @@ function render(){subject();compC=mk(W,H);const x=compC.getContext('2d'),t=$('#b
  if(t=='color'||t=='grad'){x.fillStyle=c;x.fillRect(0,0,W,H);if(t=='grad'){const g=x.createRadialGradient(W/2,H*.38,0,W/2,H*.38,Math.max(W,H)*.75);g.addColorStop(0,'#ffffff66');g.addColorStop(1,'#00000055');x.fillStyle=g;x.fillRect(0,0,W,H)}}
  else if(t=='img'&&bgImg){const k=Math.max(W/bgImg.width,H/bgImg.height),w=bgImg.width*k,h=bgImg.height*k;x.drawImage(bgImg,(W-w)/2,(H-h)/2,w,h)}
  else if(t=='blur'){const s=mk(Math.max(8,W/28|0),Math.max(8,H/28|0));const sx=s.getContext('2d');sx.imageSmoothingQuality='high';sx.drawImage(src,0,0,s.width,s.height);x.imageSmoothingQuality='high';x.drawImage(s,0,0,W,H)}
- x.drawImage(subj,0,0)}
+ x.drawImage(subj,0,0);sharpen()}
+
+function sharpen(){shMap=null;const am=P.sharp/100,dn=P.dn/100,pv=$('#shv').checked&&tab=='ns';if(!am&&!dn&&!pv)return;
+ const x=compC.getContext('2d'),id=x.getImageData(0,0,W,H),d=id.data,n=W*H,L=new Float32Array(n);
+ for(let i=0;i<n;i++)L[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];
+ const B=box(Float32Array.from(L),W,H,Math.max(1,Math.round(P.shr*W/1200))),reg=$('#shreg').value,T=P.sth,mp=pv?new Uint8ClampedArray(n*4):null;
+ for(let i=0;i<n;i++){let w=1;if(reg=='subj')w=A[i]/255;else if(reg=='face')w=pm?Math.min(1,pm.sk[i]+pm.ey[i]+pm.lip[i]):0;if(w<.01)continue;
+  const df=L[i]-B[i],ad=Math.abs(df);let e=0;
+  if(ad>T)e=(df>0?ad-T:T-ad)*am;else if(dn)e=-df*dn*(1-ad/(T||1));
+  e*=w;const o=i*4;d[o]=cl(d[o]+e);d[o+1]=cl(d[o+1]+e);d[o+2]=cl(d[o+2]+e);
+  if(mp&&ad>T){mp[o]=80;mp[o+1]=255;mp[o+2]=120;mp[o+3]=cl((ad-T)*w*(am||1)*10,0,200)}}
+ x.putImageData(id,0,0);if(mp){shMap=mk(W,H);shMap.getContext('2d').putImageData(new ImageData(mp,W,H),0,0)}}
 
 /* ---------- Hiển thị + khung cắt ---------- */
 const RT=()=>{const r=+$('#ratio').value;return r||W/H};
@@ -175,25 +209,35 @@ function draw(){const cw=wrap.clientWidth,ch=wrap.clientHeight;if(st.width!=cw*d
  X.setTransform(1,0,0,1,0,0);X.clearRect(0,0,st.width,st.height);if(!W||!compC)return;
  X.setTransform(dpr,0,0,dpr,0,0);X.fillStyle='#2b2e33';X.fillRect(0,0,cw,ch);
  X.setTransform(dpr*V.s,0,0,dpr*V.s,dpr*V.x,dpr*V.y);
- if(!lasso){const q=24/V.s;X.save();X.beginPath();X.rect(0,0,W,H);X.clip();X.fillStyle='#9a9a9a';X.fillRect(0,0,W,H);X.fillStyle='#c4c4c4';for(let y=0;y*q<H;y++)for(let x=(y&1);x*q<W;x+=2)X.fillRect(x*q,y*q,q,q);X.restore();X.drawImage(compC,0,0)}
+ if(!mview()){const q=24/V.s;X.save();X.beginPath();X.rect(0,0,W,H);X.clip();X.fillStyle='#9a9a9a';X.fillRect(0,0,W,H);X.fillStyle='#c4c4c4';for(let y=0;y*q<H;y++)for(let x=(y&1);x*q<W;x+=2)X.fillRect(x*q,y*q,q,q);X.restore();X.drawImage(compC,0,0);if(shMap&&tab=='ns')X.drawImage(shMap,0,0)}
  else{X.drawImage(src,0,0);if(ovC)X.drawImage(ovC,0,0);if(pts.length){X.lineWidth=2/V.s;X.strokeStyle='#ffe14d';X.beginPath();pts.forEach((p,i)=>i?X.lineTo(p[0],p[1]):X.moveTo(p[0],p[1]));X.stroke()}}
  if(tab=='cr'){X.setTransform(dpr,0,0,dpr,0,0);const f=frame();X.fillStyle='#000a';X.fillRect(0,0,cw,f.y);X.fillRect(0,f.y+f.h,cw,ch);X.fillRect(0,f.y,f.x,f.h);X.fillRect(f.x+f.w,f.y,cw,f.h);
-  X.strokeStyle='#fff';X.lineWidth=1.5;X.strokeRect(f.x,f.y,f.w,f.h);X.globalAlpha=.35;X.lineWidth=1;X.beginPath();for(let i=1;i<3;i++){X.moveTo(f.x+f.w*i/3,f.y);X.lineTo(f.x+f.w*i/3,f.y+f.h);X.moveTo(f.x,f.y+f.h*i/3);X.lineTo(f.x+f.w,f.y+f.h*i/3)}X.stroke();X.globalAlpha=1}}
+  X.strokeStyle='#fff';X.lineWidth=1.5;X.strokeRect(f.x,f.y,f.w,f.h);X.globalAlpha=.35;X.lineWidth=1;X.beginPath();for(let i=1;i<3;i++){X.moveTo(f.x+f.w*i/3,f.y);X.lineTo(f.x+f.w*i/3,f.y+f.h);X.moveTo(f.x,f.y+f.h*i/3);X.lineTo(f.x+f.w,f.y+f.h*i/3)}X.stroke();X.globalAlpha=1}
+ if(brush()&&cur){X.setTransform(dpr,0,0,dpr,0,0);const r=$('#bsz').value/2;X.lineWidth=3;X.strokeStyle='#000a';X.beginPath();X.arc(cur[0],cur[1],r,0,7);X.stroke();X.lineWidth=1.5;X.strokeStyle='#fff';X.stroke()}}
 new ResizeObserver(()=>{fit();draw()}).observe(wrap);
 ['ratio','fsz'].forEach(i=>$('#'+i).oninput=()=>draw());
 $('#zoom').oninput=e=>{const f=frame(),cx=f.x+f.w/2,cy=f.y+f.h/2,ix=(cx-V.x)/V.s,iy=(cy-V.y)/V.s;V.s=fitS()*+e.target.value;V.x=cx-ix*V.s;V.y=cy-iy*V.s;draw()};
 
 /* con trỏ: kéo / pinch / khoanh */
-const ptr=new Map();let pd0=0,s0=1;
+const ptr=new Map();let dP=0,mP=[0,0],stroke=false,last=null,pb=false,pi=false;
 const toImg=e=>{const r=st.getBoundingClientRect();return[(e.clientX-r.left-V.x)/V.s,(e.clientY-r.top-V.y)/V.s]};
-st.onpointerdown=e=>{if(!W)return;st.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);if(lasso&&ptr.size==1){pts=[toImg(e)]}
- if(ptr.size==2){const [a,b]=[...ptr.values()];pd0=Math.hypot(a[0]-b[0],a[1]-b[1]);s0=V.s;pts=[]}};
-st.onpointermove=e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId);
- if(ptr.size==2){ptr.set(e.pointerId,[e.clientX,e.clientY]);const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),r=st.getBoundingClientRect(),mx=(a[0]+b[0])/2-r.left,my=(a[1]+b[1])/2-r.top,ix=(mx-V.x)/V.s,iy=(my-V.y)/V.s;
-  V.s=cl(s0*d/pd0,fitS()*.3,fitS()*6);V.x=mx-ix*V.s;V.y=my-iy*V.s;$('#zoom').value=V.s/fitS();draw();return}
- if(lasso){pts.push(toImg(e))}else{V.x+=e.clientX-o[0];V.y+=e.clientY-o[1]}
- ptr.set(e.pointerId,[e.clientX,e.clientY]);draw()};
-st.onpointerup=st.onpointercancel=e=>{ptr.delete(e.pointerId);if(lasso&&pts.length>2&&ptr.size==0)applyLasso()};
+const pushHist=()=>{hist.push(mask.slice());if(hist.length>8)hist.shift()};
+st.oncontextmenu=e=>e.preventDefault();
+st.onpointerdown=e=>{if(!W)return;st.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);
+ if(ptr.size==2){if(stroke){mask=hist.pop();stroke=false;refreshOv()}pts=[];pi=true;const [a,b]=[...ptr.values()];dP=Math.hypot(a[0]-b[0],a[1]-b[1]);mP=[(a[0]+b[0])/2,(a[1]+b[1])/2];return}
+ pb=e.button>0;if(pb)return;
+ if(tool=='lasso')pts=[toImg(e)];else if(brush()){pushHist();stroke=true;last=toImg(e);paint(last,last);draw()}};
+st.onpointermove=e=>{const r=st.getBoundingClientRect();cur=[e.clientX-r.left,e.clientY-r.top];
+ if(!ptr.has(e.pointerId)){if(brush())draw();return}
+ const o=ptr.get(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);
+ if(ptr.size==2){const [a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),m=[(a[0]+b[0])/2-r.left,(a[1]+b[1])/2-r.top],ix=(mP[0]-r.left-V.x)/V.s,iy=(mP[1]-r.top-V.y)/V.s;
+  V.s=cl(V.s*d/dP,fitS()*.3,fitS()*8);V.x=m[0]-ix*V.s;V.y=m[1]-iy*V.s;dP=d;mP=[m[0]+r.left,m[1]+r.top];$('#zoom').value=V.s/fitS();draw();return}
+ if(pb||pi||tool=='pan'){V.x+=e.clientX-o[0];V.y+=e.clientY-o[1]}
+ else if(tool=='lasso')pts.push(toImg(e));
+ else if(stroke){const p=toImg(e);paint(last,p);last=p}
+ draw()};
+st.onpointerup=st.onpointercancel=e=>{ptr.delete(e.pointerId);if(stroke&&!ptr.size){stroke=false;dirty()}
+ if(tool=='lasso'&&pts.length>2&&!ptr.size&&!pi)applyLasso();if(!ptr.size){pb=false;pi=false}};
 st.onwheel=e=>{if(!W)return;e.preventDefault();const r=st.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,ix=(mx-V.x)/V.s,iy=(my-V.y)/V.s;
  V.s=cl(V.s*(e.deltaY<0?1.1:1/1.1),fitS()*.3,fitS()*6);V.x=mx-ix*V.s;V.y=my-iy*V.s;$('#zoom').value=V.s/fitS();draw()};
 
@@ -204,22 +248,47 @@ $('#auto').onclick=()=>{if(!W)return;let n=0,sl=0,sr=0,sb=0;const lo=[];for(let 
 const set=(k,v)=>{P[k]=Math.round(v);$('#r_'+k).value=P[k]};
 $('#rst').onclick=()=>{['exp','con','sh','warm','sat','key','fill'].forEach(k=>set(k,0));dirty()};
 
-/* ---------- AI tăng độ phân giải ---------- */
-$('#up').onclick=async()=>{if(!W)return;const btn=$('#up');btn.disabled=true;
- try{msg('Đang tải mô hình nâng cấp…');const T=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2');
-  let up;try{up=await T.pipeline('image-to-image',$('#mdl').value,{device:navigator.gpu?'webgpu':'wasm'})}catch{up=await T.pipeline('image-to-image',$('#mdl').value)}
-  const TS=160,pad=12,out=mk(W*2,H*2),ox=out.getContext('2d'),nx=Math.ceil(W/TS),ny=Math.ceil(H/TS);let done=0;
-  for(let ty=0;ty<H;ty+=TS)for(let tx=0;tx<W;tx+=TS){const x0=Math.max(0,tx-pad),y0=Math.max(0,ty-pad),x1=Math.min(W,tx+TS+pad),y1=Math.min(H,ty+TS+pad);
-   const c=mk(x1-x0,y1-y0);c.getContext('2d').drawImage(src,x0,y0,c.width,c.height,0,0,c.width,c.height);
-   const url=URL.createObjectURL(await new Promise(r=>c.toBlob(r,'image/png')));let r=await up(url);URL.revokeObjectURL(url);r=Array.isArray(r)?r[0]:r;
-   const t=mk(r.width,r.height),id=new ImageData(r.width,r.height),ch=r.channels;for(let i=0;i<r.width*r.height;i++){id.data[i*4]=r.data[i*ch];id.data[i*4+1]=r.data[i*ch+1];id.data[i*4+2]=r.data[i*ch+2];id.data[i*4+3]=255}
-   t.getContext('2d').putImageData(id,0,0);const tw=Math.min(TS,W-tx),th=Math.min(TS,H-ty);
-   ox.drawImage(t,(tx-x0)*2,(ty-y0)*2,tw*2,th*2,tx*2,ty*2,tw*2,th*2);msg(`Đang nâng độ phân giải… ${Math.round(++done/(nx*ny)*100)}%`)}
-  const mc=mk(W,H),mx=mc.getContext('2d'),mi=mx.createImageData(W,H);for(let i=0;i<W*H;i++){mi.data[i*4+3]=mask[i]}mx.putImageData(mi,0,0);
-  const m2=mk(W*2,H*2),m2x=m2.getContext('2d');m2x.imageSmoothingQuality='high';m2x.drawImage(mc,0,0,W*2,H*2);
-  const md=m2x.getImageData(0,0,W*2,H*2).data;W*=2;H*=2;src=out;mask=new Uint8Array(W*H);for(let i=0;i<W*H;i++)mask[i]=md[i*4+3];
-  setBase();faces=null;pm=null;refreshOv();fit();render();draw();msg('Đã nâng độ phân giải xong.');setTimeout(()=>msg(''),2500)}
- catch(e){msg('Lỗi nâng cấp: '+e.message);console.error(e)}btn.disabled=false};
+/* ---------- Tăng độ phân giải ---------- */
+const MD=[['Xenova/swin2SR-lightweight-x2-700k',2,'Nhanh (lightweight, gốc ×2)'],['Xenova/swin2SR-classical-sr-x2-64',2,'Chất lượng cao (gốc ×2)'],['Xenova/swin2SR-compressed-sr-x4-48',4,'Ảnh nén/JPEG mờ (gốc ×4)'],['Xenova/swin2SR-realworld-sr-x4-64-bsrgan-psnr',4,'Ảnh đời thực (gốc ×4)']],LIM=3600,SC={};
+MD.forEach(([id,n,t])=>$('#mdl').add(new Option(t,id)));
+const scs=(sel,l)=>l.forEach(v=>sel.add(new Option('Tăng ×'+v,v)));scs($('#msc'),[1.25,1.5,2,3,4]);scs($('#asc'),[2,3,4]);$('#msc').value=2;
+$('#mdl').onchange=()=>{$('#asc').value=SC[$('#mdl').value]||2;info()};$('#asc').onchange=()=>{SC[$('#mdl').value]=$('#asc').value;info()};
+function info(){if(!W)return;const n=MD[$('#mdl').selectedIndex][1],T=Math.min(+$('#asc').value,LIM/Math.max(W,H)),TS=n==4?112:160;let w=W,h=H,f=1,t=0;while(f<T-.01){t+=Math.ceil(w/TS)*Math.ceil(h/TS);w*=n;h*=n;f*=n}
+ $('#usz').textContent=`Hiện tại ${W}×${H}px (tối đa ${LIM}px cạnh dài). Lần AI này xử lý khoảng ${t} ô nhỏ.`}
+function adoptSrc(c){const ow=W,oh=H,m=mk(ow,oh),mx=m.getContext('2d'),mi=mx.createImageData(ow,oh);for(let i=0;i<ow*oh;i++)mi.data[i*4+3]=mask[i];mx.putImageData(mi,0,0);
+ W=c.width;H=c.height;const m2=mk(W,H),q=m2.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(m,0,0,W,H);const md=q.getImageData(0,0,W,H).data;mask=new Uint8Array(W*H);for(let i=0;i<W*H;i++)mask[i]=md[i*4+3];
+ src=c;setBase();faces=null;pm=null;hist=[];refreshOv();fit();render();draw();needFaces()}
+function lz(c,w2,h2){const w=c.width,h=c.height,S=c.getContext('2d').getImageData(0,0,w,h).data;
+ const K=(n,m)=>{const r=m/n,I=new Int32Array(m*6),V2=new Float32Array(m*6);for(let o=0;o<m;o++){const ce=(o+.5)/r-.5,f=Math.floor(ce);let s=0;for(let k=0;k<6;k++){const x=ce-(f-2+k),v=x==0?1:3*Math.sin(Math.PI*x)*Math.sin(Math.PI*x/3)/(Math.PI*Math.PI*x*x);I[o*6+k]=cl(f-2+k,0,n-1);V2[o*6+k]=v;s+=v}for(let k=0;k<6;k++)V2[o*6+k]/=s}return[I,V2]};
+ const [xi,xv]=K(w,w2),[yi,yv]=K(h,h2),t=new Uint8ClampedArray(w2*h*4);
+ for(let y=0;y<h;y++)for(let x=0;x<w2;x++){let r=0,g=0,b=0;for(let k=0;k<6;k++){const o=(y*w+xi[x*6+k])*4,v=xv[x*6+k];r+=S[o]*v;g+=S[o+1]*v;b+=S[o+2]*v}const o=(y*w2+x)*4;t[o]=r;t[o+1]=g;t[o+2]=b;t[o+3]=255}
+ const D=new Uint8ClampedArray(w2*h2*4);
+ for(let y=0;y<h2;y++)for(let x=0;x<w2;x++){let r=0,g=0,b=0;for(let k=0;k<6;k++){const o=(yi[y*6+k]*w2+x)*4,v=yv[y*6+k];r+=t[o]*v;g+=t[o+1]*v;b+=t[o+2]*v}const o=(y*w2+x)*4;D[o]=r;D[o+1]=g;D[o+2]=b;D[o+3]=255}
+ const out=mk(w2,h2);out.getContext('2d').putImageData(new ImageData(D,w2,h2),0,0);return out}
+$('#upm').onclick=()=>{if(!W)return;const T=Math.min(+$('#msc').value,LIM/Math.max(W,H));if(T<=1.01){msg('Ảnh đã đạt kích thước tối đa.');setTimeout(()=>msg(''),2500);return}
+ const w2=Math.round(W*T),h2=Math.round(H*T);msg('Đang nội suy…');
+ setTimeout(()=>{let c;if($('#imt').value=='lz')c=lz(src,w2,h2);else{c=mk(w2,h2);const q=c.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(src,0,0,w2,h2)}adoptSrc(c);msg('Đã nội suy xong.');setTimeout(()=>msg(''),2000)},40)};
+async function tiles(up,cv,n,p,tp){const w=cv.width,h=cv.height,TS=n==4?112:160,pd=12,out=mk(w*n,h*n),ox=out.getContext('2d'),tot=Math.ceil(w/TS)*Math.ceil(h/TS);let k=0;
+ for(let ty=0;ty<h;ty+=TS)for(let tx=0;tx<w;tx+=TS){const x0=Math.max(0,tx-pd),y0=Math.max(0,ty-pd),x1=Math.min(w,tx+TS+pd),y1=Math.min(h,ty+TS+pd),c=mk(x1-x0,y1-y0);c.getContext('2d').drawImage(cv,x0,y0,c.width,c.height,0,0,c.width,c.height);
+  const url=URL.createObjectURL(await new Promise(r=>c.toBlob(r,'image/png')));let r=await up(url);URL.revokeObjectURL(url);r=Array.isArray(r)?r[0]:r;
+  const t=mk(r.width,r.height),id=new ImageData(r.width,r.height),ch=r.channels;for(let i=0;i<r.width*r.height;i++){for(let j=0;j<3;j++)id.data[i*4+j]=r.data[i*ch+j];id.data[i*4+3]=255}
+  t.getContext('2d').putImageData(id,0,0);const q=r.width/c.width,tw=Math.min(TS,w-tx),th=Math.min(TS,h-ty);
+  ox.drawImage(t,(tx-x0)*q,(ty-y0)*q,tw*q,th*q,tx*n,ty*n,tw*n,th*n);msg(`AI lượt ${p}/${tp}: ${Math.round(++k/tot*100)}%`)}
+ return out}
+$('#up').onclick=async()=>{if(!W)return;const btn=$('#up'),[mid,n]=MD[$('#mdl').selectedIndex],T=Math.min(+$('#asc').value,LIM/Math.max(W,H));
+ if(T<=1.01){msg('Ảnh đã đạt kích thước tối đa.');setTimeout(()=>msg(''),2500);return}btn.disabled=true;
+ try{msg('Đang tải mô hình…');const M=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2');
+  let up;try{up=await M.pipeline('image-to-image',mid,{device:navigator.gpu?'webgpu':'wasm'})}catch{up=await M.pipeline('image-to-image',mid)}
+  let tp=0,ff=1;while(ff<T-.01){ff*=n;tp++}let cv=src,f=1,p=0;const w2=Math.round(W*T),h2=Math.round(H*T);
+  while(f<T-.01){cv=await tiles(up,cv,n,++p,tp);f*=n}
+  if(cv.width!=w2){const c=mk(w2,h2),q=c.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(cv,0,0,w2,h2);cv=c}
+  adoptSrc(cv);msg('Đã nâng độ phân giải xong.');setTimeout(()=>msg(''),2500)}
+ catch(e){msg('Lỗi nâng cấp (mô hình có thể chưa tải được): '+e.message);console.error(e)}btn.disabled=false};
+
+/* ---------- Tự căn khuôn mặt ---------- */
+$('#af').onclick=async()=>{if(!W)return;await needFaces(true);if(!faces||!faces.length)return;
+ const ys=IDX.oval.map(i=>faces[i].y*H),xs=IDX.oval.map(i=>faces[i].x*W),fh=Math.max(...ys)-Math.min(...ys),cx=(Math.max(...xs)+Math.min(...xs))/2,cy=(Math.max(...ys)+Math.min(...ys))/2,f=frame();
+ V.s=cl(f.h*.55/fh,fitS()*.3,fitS()*8);V.x=f.x+f.w/2-cx*V.s;V.y=f.y+f.h*.47-cy*V.s;$('#zoom').value=V.s/fitS();draw()};
 
 /* ---------- Tải về ---------- */
 $('#dl').onclick=()=>{if(!W||!compC)return;const jpg=$('#fmt').value=='jpg';let sx=0,sy=0,sw=W,sh=H;
@@ -229,5 +298,5 @@ $('#dl').onclick=()=>{if(!W||!compC)return;const jpg=$('#fmt').value=='jpg';let 
  if(jpg||['color','grad'].includes($('#bgt').value)){x.fillStyle=jpg&&!['color','grad'].includes($('#bgt').value)?'#fff':$('#col').value;x.fillRect(0,0,ow,oh)}
  x.drawImage(compC,sx,sy,sw,sh,0,0,ow,oh);
  o.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='chan-dung.'+(jpg?'jpg':'png');a.click()},jpg?'image/jpeg':'image/png',.95)};
-setTab('bg');
+setTool('pan');setTab('bg');
 </script></body></html>
