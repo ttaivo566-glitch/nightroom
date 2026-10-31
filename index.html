@@ -249,7 +249,7 @@ const set=(k,v)=>{P[k]=Math.round(v);$('#r_'+k).value=P[k]};
 $('#rst').onclick=()=>{['exp','con','sh','warm','sat','key','fill'].forEach(k=>set(k,0));dirty()};
 
 /* ---------- Tăng độ phân giải ---------- */
-const MD=[['Xenova/swin2SR-lightweight-x2-700k',2,'Nhanh (lightweight, gốc ×2)'],['Xenova/swin2SR-classical-sr-x2-64',2,'Chất lượng cao (gốc ×2)'],['Xenova/swin2SR-compressed-sr-x4-48',4,'Ảnh nén/JPEG mờ (gốc ×4)'],['Xenova/swin2SR-realworld-sr-x4-64-bsrgan-psnr',4,'Ảnh đời thực (gốc ×4)']],LIM=3600,SC={};
+const MD=[['Xenova/swin2SR-classical-sr-x2-64',2,'Chất lượng cao (gốc ×2)'],['Xenova/swin2SR-compressed-sr-x4-48',4,'Ảnh nén/JPEG mờ (gốc ×4)'],['Xenova/swin2SR-realworld-sr-x4-64-bsrgan-psnr',4,'Ảnh đời thực (gốc ×4)']],LIM=3600,SC={};
 MD.forEach(([id,n,t])=>$('#mdl').add(new Option(t,id)));
 const scs=(sel,l)=>l.forEach(v=>sel.add(new Option('Tăng ×'+v,v)));scs($('#msc'),[1.25,1.5,2,3,4]);scs($('#asc'),[2,3,4]);$('#msc').value=2;
 $('#mdl').onchange=()=>{$('#asc').value=SC[$('#mdl').value]||2;info()};$('#asc').onchange=()=>{SC[$('#mdl').value]=$('#asc').value;info()};
@@ -278,7 +278,7 @@ async function tiles(up,cv,n,p,tp){const w=cv.width,h=cv.height,TS=n==4?112:160,
 $('#up').onclick=async()=>{if(!W)return;const btn=$('#up'),[mid,n]=MD[$('#mdl').selectedIndex],T=Math.min(+$('#asc').value,LIM/Math.max(W,H));
  if(T<=1.01){msg('Ảnh đã đạt kích thước tối đa.');setTimeout(()=>msg(''),2500);return}btn.disabled=true;
  try{msg('Đang tải mô hình…');const M=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2');
-  let up;try{up=await M.pipeline('image-to-image',mid,{device:navigator.gpu?'webgpu':'wasm'})}catch{up=await M.pipeline('image-to-image',mid)}
+  const up=await M.pipeline('image-to-image',mid);
   let tp=0,ff=1;while(ff<T-.01){ff*=n;tp++}let cv=src,f=1,p=0;const w2=Math.round(W*T),h2=Math.round(H*T);
   while(f<T-.01){cv=await tiles(up,cv,n,++p,tp);f*=n}
   if(cv.width!=w2){const c=mk(w2,h2),q=c.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(cv,0,0,w2,h2);cv=c}
